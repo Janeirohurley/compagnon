@@ -1,50 +1,57 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [Unreleased] - Current Development
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
+This section tracks changes not yet released.
 
 ### Added
-- **Skills System**: Added comprehensive skill-based architecture for agent capabilities
-  - `companion-foundation`: Core identity and self-knowledge
-  - `workspace-observation`: Environment awareness and discovery
-  - `knowledge-memory`: Persistent memory and knowledge management
+
+- **Skills System**: Skill-based architecture for agent capabilities. Each skill defines specific behavior patterns the agent applies when appropriate.
+
+  - `companion-foundation`: Core identity, self-knowledge, and operating principles
+  - `workspace-observation`: Environment discovery and awareness
+  - `knowledge-memory`: Persistent memory across sessions
   - `policy-safety`: Safety guidelines and guardrails
   - `master-communication`: Communication protocols
   - `planning-sync`: Task planning and synchronization
   - `filesystem`: File operations with boundary awareness
   - `git`: Git repository operations
-  - `github`: GitHub integration
-  - `outline-knowledge`: Outline knowledge base integration
-  - `plane-knowledge`: Plane project management integration
-  - `remote-operations`: SSH and remote command execution
-  - `planning-sync`: Planning synchronization
-  - `policy-safety`: Safety policies
+  - `github`: GitHub API integration
+  - `outline-knowledge`: Outline knowledge base connection
+  - `plane-knowledge`: Plane project management connection
+  - `remote-operations`: SSH remote execution
+  - `workspace-observation`: Environment awareness
 
-- **New Tools**:
-  - `companion-foundation-tool`: Load companion foundational knowledge
-  - `date-time-tool`: Get current date and time
-  - `project-file-tools`: Enhanced file operations
-  - `ssh-command-tool`: SSH remote operations
+- **New Tools**: Added four tools exposed to the agent at runtime:
 
-- **MCP Integration**: Added MCP (Model Context Protocol) support
-- **Example Skill Template**: Added template for creating new skills
+  - `companion-foundation-tool`: Loads companion foundational knowledge
+  - `date-time-tool`: Returns current date and time
+  - `project-file-tools`: Enhanced file operations (read, write, edit, search, list)
+  - `ssh-command-tool`: SSH remote operations (run commands, SFTP, sessions)
+
+- **MCP Integration**: Added MCP (Model Context Protocol) support for dynamic tool exposure
+
+- **Example Skill Template**: Added `.agents/skills/example-skill/` as a template for creating new skills
 
 ### Changed
-- Updated `.env.example` with new configuration variables
-- Enhanced agent configuration with skills array
-- Updated dependencies (`@mastra/editor`, `@mastra/mcp`, `ai`)
+
+- Updated `.env.example` with new environment variables for SSH, Outline, and Omniroute
+- Updated agent configuration in `src/mastra/agents/agent.ts` to include skills array
+- Updated dependencies: `@mastra/editor`, `@mastra/mcp`, `@ai-sdk/provider`, `ai`, `zod`
 
 ### Fixed
-- Improved filesystem boundary awareness
-- Enhanced skill loading mechanism
+
+- Improved filesystem boundary awareness in file operations
+- Enhanced skill loading mechanism for better runtime integration
+
+---
 
 ## [1.0.0] - 2024-01-01
 
+Initial project setup.
+
 ### Added
-- Initial project setup
+
 - Basic agent configuration
 - Mastra framework integration
+- Initial project structure

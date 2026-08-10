@@ -1,0 +1,26 @@
+name: example-skill
+description: Un exemple de skill pour démontrer la structure
+version: 1.0.0
+
+triggers:
+  - when: user_mentions
+    pattern: "exemple|exemple skill|démonstration"
+  - when: task_matches
+    patterns:
+      - "comment.*structur.*skill"
+      - "créer.*skill"
+      - "exemple.*fichier"
+
+conditions:
+  - require: tools_available
+    any_of:
+      - read_file
+      - write_file
+
+output:
+  format: markdown
+  streaming: true
+
+permissions:
+  - read: workspace
+  - write: workspace
