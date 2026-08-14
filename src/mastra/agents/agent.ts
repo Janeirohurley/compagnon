@@ -5,6 +5,8 @@ import { companionInstructions } from '../instructions/companion-instructions';
 import { getCompanionModelConfig } from '../config/model-config';
 import { getCompanionTools } from '../tools';
 import { getCompanionMcpTools } from '../mcp';
+import { memoryAgent } from './memory-agent';
+import { buildMemoryDelegationPrompt, parseMemoryTaskResult, type MemoryTask } from './delegation';
 
 const model = getCompanionModelConfig();
 
@@ -72,3 +74,13 @@ export const agent = new Agent({
     ...mcpTools,
   },
 });
+
+// Export for external use
+export { memoryAgent };
+
+// Helper to delegate to Memory Agent
+export async function delegateToMemoryAgent(task: MemoryTask) {
+  const prompt = buildMemoryDelegationPrompt(task);
+  const response = await memoryAgent.generate(prompt);
+  return parseMemoryTaskResult(response.text);
+}

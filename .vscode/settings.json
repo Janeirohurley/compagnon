@@ -1,0 +1,5 @@
+{
+    "tree-generator.readmePath": "README.md",
+    "tree-generator.outputStyle": "ascii",
+    "tree-generator.maxDepth": -1
+}

@@ -1,0 +1,591 @@
+{
+  "version": 1,
+  "directories": {
+    "": {
+      "order": [
+        ".agents",
+        "src",
+        ".env.example",
+        ".gitignore",
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "MEMORY_SYSTEM.md",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "README.md",
+        "skills-lock.json",
+        "tsconfig.json",
+        ".claude",
+        ".vscode",
+        "subagent-docs"
+      ],
+      "excluded": [
+        ".claude",
+        ".vscode",
+        "subagent-docs"
+      ]
+    },
+    ".agents": {
+      "order": [
+        ".agents/skills"
+      ],
+      "excluded": []
+    },
+    ".agents/skills": {
+      "order": [
+        ".agents/skills/commit-message",
+        ".agents/skills/commit-message-storyteller",
+        ".agents/skills/companion-foundation",
+        ".agents/skills/create-implementation-plan",
+        ".agents/skills/create-readme",
+        ".agents/skills/developer",
+        ".agents/skills/doc-and-modernize",
+        ".agents/skills/documentation",
+        ".agents/skills/documentation-writer",
+        ".agents/skills/draw-io-diagram-generator",
+        ".agents/skills/drawio",
+        ".agents/skills/example-skill",
+        ".agents/skills/filesystem",
+        ".agents/skills/git",
+        ".agents/skills/git-commit",
+        ".agents/skills/git-flow-branch-creator",
+        ".agents/skills/github",
+        ".agents/skills/github-issue-query",
+        ".agents/skills/github-issues",
+        ".agents/skills/github-labels-query",
+        ".agents/skills/github-mcp-server",
+        ".agents/skills/knowledge-memory",
+        ".agents/skills/markdown-to-html",
+        ".agents/skills/master-communication",
+        ".agents/skills/mastra",
+        ".agents/skills/mcp-implementation-security-review",
+        ".agents/skills/mcp-security-audit",
+        ".agents/skills/outline-knowledge",
+        ".agents/skills/plane-knowledge",
+        ".agents/skills/planning-sync",
+        ".agents/skills/policy-safety",
+        ".agents/skills/readme-blueprint-generator",
+        ".agents/skills/remote-operations",
+        ".agents/skills/workspace-observation"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/commit-message": {
+      "order": [
+        ".agents/skills/commit-message/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/commit-message-storyteller": {
+      "order": [
+        ".agents/skills/commit-message-storyteller/references",
+        ".agents/skills/commit-message-storyteller/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/commit-message-storyteller/references": {
+      "order": [
+        ".agents/skills/commit-message-storyteller/references/conventional-commits-guide.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/companion-foundation": {
+      "order": [
+        ".agents/skills/companion-foundation/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/create-implementation-plan": {
+      "order": [
+        ".agents/skills/create-implementation-plan/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/create-readme": {
+      "order": [
+        ".agents/skills/create-readme/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/developer": {
+      "order": [
+        ".agents/skills/developer/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/doc-and-modernize": {
+      "order": [
+        ".agents/skills/doc-and-modernize/references",
+        ".agents/skills/doc-and-modernize/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/doc-and-modernize/references": {
+      "order": [
+        ".agents/skills/doc-and-modernize/references/copilot-instructions.template.md",
+        ".agents/skills/doc-and-modernize/references/migration-hazards.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/documentation": {
+      "order": [
+        ".agents/skills/documentation/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/documentation-writer": {
+      "order": [
+        ".agents/skills/documentation-writer/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/draw-io-diagram-generator": {
+      "order": [
+        ".agents/skills/draw-io-diagram-generator/assets",
+        ".agents/skills/draw-io-diagram-generator/references",
+        ".agents/skills/draw-io-diagram-generator/scripts",
+        ".agents/skills/draw-io-diagram-generator/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/draw-io-diagram-generator/assets": {
+      "order": [
+        ".agents/skills/draw-io-diagram-generator/assets/templates"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/draw-io-diagram-generator/assets/templates": {
+      "order": [
+        ".agents/skills/draw-io-diagram-generator/assets/templates/architecture.drawio",
+        ".agents/skills/draw-io-diagram-generator/assets/templates/er-diagram.drawio",
+        ".agents/skills/draw-io-diagram-generator/assets/templates/flowchart.drawio",
+        ".agents/skills/draw-io-diagram-generator/assets/templates/sequence.drawio",
+        ".agents/skills/draw-io-diagram-generator/assets/templates/uml-class.drawio"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/draw-io-diagram-generator/references": {
+      "order": [
+        ".agents/skills/draw-io-diagram-generator/references/drawio-xml-schema.md",
+        ".agents/skills/draw-io-diagram-generator/references/shape-libraries.md",
+        ".agents/skills/draw-io-diagram-generator/references/style-reference.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/draw-io-diagram-generator/scripts": {
+      "order": [
+        ".agents/skills/draw-io-diagram-generator/scripts/.gitignore",
+        ".agents/skills/draw-io-diagram-generator/scripts/add-shape.py",
+        ".agents/skills/draw-io-diagram-generator/scripts/README.md",
+        ".agents/skills/draw-io-diagram-generator/scripts/validate-drawio.py"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/drawio": {
+      "order": [
+        ".agents/skills/drawio/scripts",
+        ".agents/skills/drawio/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/drawio/scripts": {
+      "order": [
+        ".agents/skills/drawio/scripts/drawio-to-png.mjs",
+        ".agents/skills/drawio/scripts/package.json"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/example-skill": {
+      "order": [
+        ".agents/skills/example-skill/SKILL.md",
+        ".agents/skills/example-skill/skill.yaml"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/filesystem": {
+      "order": [
+        ".agents/skills/filesystem/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/git": {
+      "order": [
+        ".agents/skills/git/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/git-commit": {
+      "order": [
+        ".agents/skills/git-commit/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/git-flow-branch-creator": {
+      "order": [
+        ".agents/skills/git-flow-branch-creator/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/github": {
+      "order": [],
+      "excluded": []
+    },
+    ".agents/skills/github-issue-query": {
+      "order": [
+        ".agents/skills/github-issue-query/query-issues.sh",
+        ".agents/skills/github-issue-query/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/github-issues": {
+      "order": [
+        ".agents/skills/github-issues/references",
+        ".agents/skills/github-issues/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/github-issues/references": {
+      "order": [
+        ".agents/skills/github-issues/references/dependencies.md",
+        ".agents/skills/github-issues/references/images.md",
+        ".agents/skills/github-issues/references/issue-fields.md",
+        ".agents/skills/github-issues/references/issue-types.md",
+        ".agents/skills/github-issues/references/projects.md",
+        ".agents/skills/github-issues/references/search.md",
+        ".agents/skills/github-issues/references/sub-issues.md",
+        ".agents/skills/github-issues/references/templates.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/github-labels-query": {
+      "order": [
+        ".agents/skills/github-labels-query/query-labels.sh",
+        ".agents/skills/github-labels-query/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/github-mcp-server": {
+      "order": [
+        ".agents/skills/github-mcp-server/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/knowledge-memory": {
+      "order": [
+        ".agents/skills/knowledge-memory/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/markdown-to-html": {
+      "order": [
+        ".agents/skills/markdown-to-html/references",
+        ".agents/skills/markdown-to-html/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/markdown-to-html/references": {
+      "order": [
+        ".agents/skills/markdown-to-html/references/basic-markdown-to-html.md",
+        ".agents/skills/markdown-to-html/references/basic-markdown.md",
+        ".agents/skills/markdown-to-html/references/code-blocks-to-html.md",
+        ".agents/skills/markdown-to-html/references/code-blocks.md",
+        ".agents/skills/markdown-to-html/references/collapsed-sections-to-html.md",
+        ".agents/skills/markdown-to-html/references/collapsed-sections.md",
+        ".agents/skills/markdown-to-html/references/gomarkdown.md",
+        ".agents/skills/markdown-to-html/references/hugo.md",
+        ".agents/skills/markdown-to-html/references/jekyll.md",
+        ".agents/skills/markdown-to-html/references/marked.md",
+        ".agents/skills/markdown-to-html/references/pandoc.md",
+        ".agents/skills/markdown-to-html/references/tables-to-html.md",
+        ".agents/skills/markdown-to-html/references/tables.md",
+        ".agents/skills/markdown-to-html/references/writing-mathematical-expressions-to-html.md",
+        ".agents/skills/markdown-to-html/references/writing-mathematical-expressions.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/master-communication": {
+      "order": [
+        ".agents/skills/master-communication/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/mastra": {
+      "order": [
+        ".agents/skills/mastra/references",
+        ".agents/skills/mastra/scripts",
+        ".agents/skills/mastra/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/mastra/references": {
+      "order": [
+        ".agents/skills/mastra/references/common-errors.md",
+        ".agents/skills/mastra/references/core-concepts.md",
+        ".agents/skills/mastra/references/create-mastra.md",
+        ".agents/skills/mastra/references/embedded-docs.md",
+        ".agents/skills/mastra/references/mastra-api.md",
+        ".agents/skills/mastra/references/migration-guide.md",
+        ".agents/skills/mastra/references/model-selection.md",
+        ".agents/skills/mastra/references/remote-docs.md",
+        ".agents/skills/mastra/references/trace-intelligence.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/mastra/scripts": {
+      "order": [
+        ".agents/skills/mastra/scripts/provider-registry.mjs"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/mcp-implementation-security-review": {
+      "order": [
+        ".agents/skills/mcp-implementation-security-review/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/mcp-security-audit": {
+      "order": [
+        ".agents/skills/mcp-security-audit/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/outline-knowledge": {
+      "order": [
+        ".agents/skills/outline-knowledge/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/plane-knowledge": {
+      "order": [
+        ".agents/skills/plane-knowledge/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/planning-sync": {
+      "order": [
+        ".agents/skills/planning-sync/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/policy-safety": {
+      "order": [
+        ".agents/skills/policy-safety/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/readme-blueprint-generator": {
+      "order": [
+        ".agents/skills/readme-blueprint-generator/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/remote-operations": {
+      "order": [
+        ".agents/skills/remote-operations/SKILL.md"
+      ],
+      "excluded": []
+    },
+    ".agents/skills/workspace-observation": {
+      "order": [
+        ".agents/skills/workspace-observation/SKILL.md"
+      ],
+      "excluded": []
+    },
+    "src": {
+      "order": [
+        "src/mastra"
+      ],
+      "excluded": []
+    },
+    "src/mastra": {
+      "order": [
+        "src/mastra/agents",
+        "src/mastra/config",
+        "src/mastra/connections",
+        "src/mastra/instructions",
+        "src/mastra/mcp",
+        "src/mastra/memory",
+        "src/mastra/models",
+        "src/mastra/routes",
+        "src/mastra/tools",
+        "src/mastra/workflows",
+        "src/mastra/index.ts",
+        "src/mastra/__tests__"
+      ],
+      "excluded": [
+        "src/mastra/__tests__"
+      ]
+    },
+    "src/mastra/agents": {
+      "order": [
+        "src/mastra/agents/agent.ts",
+        "src/mastra/agents/delegation.ts",
+        "src/mastra/agents/memory-agent.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/config": {
+      "order": [
+        "src/mastra/config/companion-config.ts",
+        "src/mastra/config/model-config.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/connections": {
+      "order": [
+        "src/mastra/connections/connection-providers.ts",
+        "src/mastra/connections/connection-store.ts",
+        "src/mastra/connections/plane-provider.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/instructions": {
+      "order": [
+        "src/mastra/instructions/companion-instructions.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/mcp": {
+      "order": [
+        "src/mastra/mcp/filesystem.ts",
+        "src/mastra/mcp/git.ts",
+        "src/mastra/mcp/github.ts",
+        "src/mastra/mcp/index.ts",
+        "src/mastra/mcp/outline.ts",
+        "src/mastra/mcp/plane.ts",
+        "src/mastra/mcp/ssh.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/memory": {
+      "order": [
+        "src/mastra/memory/db",
+        "src/mastra/memory/hooks",
+        "src/mastra/memory/manager",
+        "src/mastra/memory/tools",
+        "src/mastra/memory/types",
+        "src/mastra/memory/consolidation.ts",
+        "src/mastra/memory/observability.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/memory/db": {
+      "order": [
+        "src/mastra/memory/db/client.ts",
+        "src/mastra/memory/db/schema.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/memory/hooks": {
+      "order": [
+        "src/mastra/memory/hooks/index.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/memory/manager": {
+      "order": [
+        "src/mastra/memory/manager/index.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/memory/tools": {
+      "order": [
+        "src/mastra/memory/tools/index.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/memory/types": {
+      "order": [
+        "src/mastra/memory/types/index.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/models": {
+      "order": [],
+      "excluded": []
+    },
+    "src/mastra/routes": {
+      "order": [
+        "src/mastra/routes/connections-routes.ts",
+        "src/mastra/routes/memory-routes.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/tools": {
+      "order": [
+        "src/mastra/tools/outline",
+        "src/mastra/tools/plane",
+        "src/mastra/tools/shell",
+        "src/mastra/tools/ssh",
+        "src/mastra/tools/web",
+        "src/mastra/tools/workspace",
+        "src/mastra/tools/companion-foundation-tool.ts",
+        "src/mastra/tools/date-time-tool.ts",
+        "src/mastra/tools/index.ts",
+        "src/mastra/tools/plane-api-tools.ts",
+        "src/mastra/tools/project-file-tools.ts",
+        "src/mastra/tools/schedule-tools.ts",
+        "src/mastra/tools/ssh-command-tool.ts"
+      ],
+      "excluded": []
+    },
+    "src/mastra/tools/outline": {
+      "order": [],
+      "excluded": []
+    },
+    "src/mastra/tools/plane": {
+      "order": [],
+      "excluded": []
+    },
+    "src/mastra/tools/shell": {
+      "order": [],
+      "excluded": []
+    },
+    "src/mastra/tools/ssh": {
+      "order": [],
+      "excluded": []
+    },
+    "src/mastra/tools/web": {
+      "order": [],
+      "excluded": []
+    },
+    "src/mastra/tools/workspace": {
+      "order": [],
+      "excluded": []
+    },
+    "src/mastra/workflows": {
+      "order": [],
+      "excluded": []
+    },
+    "src/mastra/__tests__": {
+      "order": [],
+      "excluded": []
+    },
+    ".claude": {
+      "order": [
+        ".claude/skills",
+        ".claude/settings.local.json"
+      ],
+      "excluded": []
+    },
+    ".claude/skills": {
+      "order": [],
+      "excluded": []
+    },
+    ".vscode": {
+      "order": [
+        ".vscode/launch.json",
+        ".vscode/settings.json"
+      ],
+      "excluded": []
+    },
+    "subagent-docs": {
+      "order": [
+        "subagent-docs/memory-agent.md"
+      ],
+      "excluded": []
+    }
+  },
+  "descriptions": {}
+}

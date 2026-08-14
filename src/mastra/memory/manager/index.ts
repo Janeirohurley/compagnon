@@ -1,6 +1,7 @@
 // Memory Manager - central service for all memory operations
 import { SQL_SCHEMA } from "../db/schema";
 import { memoryDb, initializeMemoryDatabase } from "../db/client";
+import { logMemoryEvent } from "../observability";
 import type {
   SemanticMemory,
   Episode,
@@ -44,6 +45,13 @@ export class MemoryManager {
     const { query, scope, scopeId, project, repository, types, minConfidence = 0, limit = 10 } = input;
 
     const queryLower = query.toLowerCase();
+
+    logMemoryEvent({
+      type: "memory.retrieved",
+      scope,
+      scopeId,
+      details: { query, types, limit },
+    });
 
     if (!types || types.includes("semantic")) {
       const memories = await this.listMemories(scope, scopeId);
@@ -110,18 +118,27 @@ export class MemoryManager {
   async remember(input: RememberInput): Promise<SemanticMemory> {
     await this.initialize();
     const { scope, scopeId, subject, predicate, value, confidence, source } = input;
-    
+
     const nowDate = new Date();
     const id = generateId();
-    
+
     await memoryDb.execute({
-      sql: `INSERT INTO semantic_memories 
+      sql: `INSERT INTO semantic_memories
         (id, scope, scope_id, subject, predicate, value, confidence, source_type, source_reference, created_at, updated_at, status, use_count)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
-        id, scope, scopeId || null, subject, predicate, value, confidence, 
+        id, scope, scopeId || null, subject, predicate, value, confidence,
         source.type, source.reference || null, nowDate.toISOString(), nowDate.toISOString(), "active", 0
       ],
+    });
+
+    logMemoryEvent({
+      type: "memory.created",
+      memoryId: id,
+      memoryType: "semantic",
+      scope,
+      scopeId,
+      details: { subject, predicate, value, confidence },
     });
 
     const memory: SemanticMemory = {

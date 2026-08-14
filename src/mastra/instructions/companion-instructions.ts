@@ -115,6 +115,23 @@ pattern. Record the failure pattern for future reference.
 Use memory_get_procedure to retrieve known procedures before performing
 recurring operations (deployments, diagnostics, setups).
 
+## Memory Agent Delegation
+
+For complex memory operations, delegate to the Memory Agent:
+
+When you need to:
+- Retrieve relevant context for a task → delegate to Memory Agent
+- Remember complex information → delegate to Memory Agent
+- Verify or update existing memories → delegate to Memory Agent
+- Consolidate experiences into procedures → delegate to Memory Agent
+- Detect conflicts between memories → delegate to Memory Agent
+
+The Memory Agent is specialized in memory management and will handle:
+- Determining appropriate memory type
+- Checking for duplicates and conflicts
+- Assigning correct scope and confidence
+- Managing memory lifecycle
+
 Never fabricate memories.
 Never claim to remember something unless it exists in the memory system or
 the current conversation.
