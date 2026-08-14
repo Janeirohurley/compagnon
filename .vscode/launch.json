@@ -1,0 +1,51 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Companion Agent",
+      "command": "npm run dev",
+      "cwd": "/home/projets/ai/compagnon"
+    },
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Compagnon App",
+      "command": "npm run dev",
+      "cwd": "/home/projets/ai/next-shadcn-admin-dashboard"
+    },
+    {
+      "type": "omniroute",
+      "request": "launch",
+      "name": "Compagnon App",
+      "command": "omniroute",
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Chrome - Companion",
+      "url": "http://localhost:4111",
+      "webRoot": "/home/projets/ai/compagnon"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Chrome - App",
+      "url": "http://localhost:3000",
+      "webRoot": "/home/projets/ai/next-shadcn-admin-dashboard"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch All Applications",
+      "configurations": [
+        "Companion Agent",
+        "Compagnon App",
+        "Chrome - Companion",
+        "Chrome - App"
+      ],
+      "stopAll": true
+    }
+  ]
+}

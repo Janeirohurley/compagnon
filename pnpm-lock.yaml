@@ -8,6 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@ai-sdk/react':
+        specifier: ^4.0.61
+        version: 4.0.61(react@19.2.8)(zod@4.4.3)
+      '@libsql/client':
+        specifier: 0.17.4
+        version: 0.17.4
+      '@mastra/ai-sdk':
+        specifier: ^1.7.2
+        version: 1.7.2(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(zod@4.4.3)
       '@mastra/core':
         specifier: 1.57.0
         version: 1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3)
@@ -16,13 +25,13 @@ importers:
         version: 1.6.0(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))
       '@mastra/editor':
         specifier: ^0.13.11
-        version: 0.13.11(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(@mastra/mcp@1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(zod@4.4.3))(ws@8.21.3)(zod@4.4.3)
+        version: 0.13.11(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(@mastra/mcp@1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(react@19.2.8)(zod@4.4.3))(ws@8.21.3)(zod@4.4.3)
       '@mastra/libsql':
         specifier: 1.19.0
         version: 1.19.0(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))
       '@mastra/mcp':
         specifier: ^1.15.1
-        version: 1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(zod@4.4.3)
+        version: 1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(react@19.2.8)(zod@4.4.3)
       '@mastra/memory':
         specifier: 1.26.0
         version: 1.26.0(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))
@@ -69,6 +78,12 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/mcp@2.0.29':
+    resolution: {integrity: sha512-cK8mYpjKGp7/gmsTYtq/dkdmNlBeWQrwcfsah/W9hN6Vr1yNzunLnAZAqL5tMzumLDBueSz6y+vrb5z8DJ8TMg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@3.0.30':
     resolution: {integrity: sha512-NCJ9JKow5ENAgEZxzvEvF20thwDiH+hutvzmrUDbloRX0azpJHNst8+7pZIVryYhLM9wgpT5/ShTSjPTFhkxEQ==}
     engines: {node: '>=18'}
@@ -108,6 +123,12 @@ packages:
   '@ai-sdk/provider@4.0.7':
     resolution: {integrity: sha512-6or44XprPzKbr8zkmzosowSE0pxkvJcoojBL+mCZvPUt3kvXp3XSNqeVun9golb1acEfSo6yaEBRT18h2VU+1Q==}
     engines: {node: '>=22'}
+
+  '@ai-sdk/react@4.0.61':
+    resolution: {integrity: sha512-iY59f4092oD3Px2xL5qCmfG5gC0ySHCw5d2Hzq5ReCvig/DIgwUQ6SZG49XIgc8Yg7leTQ4y41CXXY8nQ1eWrA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
 
   '@arcadeai/arcadejs@2.4.1':
     resolution: {integrity: sha512-DLpvvDBvRNjzVmFYJ+upPrUJ8YRBoGWqPfzhuFp2+lh5Shxm0l9qLwe1Ah4pKvuCatU7TLOOTkFpICitTuuJeQ==}
@@ -572,6 +593,13 @@ packages:
   '@lukeed/uuid@2.0.1':
     resolution: {integrity: sha512-qC72D4+CDdjGqJvkFMMEAtancHUQ7/d/tAiHf64z8MopFDmcrtbcJuerDtFceuAfQJ2pDSfCKCtbqoGBNnwg0w==}
     engines: {node: '>=8'}
+
+  '@mastra/ai-sdk@1.7.2':
+    resolution: {integrity: sha512-Oen1ssBO0YCGLmO6R9Mc5Pwb5HunssrdFK/2QCS+kG/fS/jOLl+gAzv84qQxq4j+XBLJBff5PbkFflyYmXaZwQ==}
+    engines: {node: '>=22.13.0'}
+    peerDependencies:
+      '@mastra/core': '>=1.5.0-0 <2.0.0-0'
+      zod: ^3.25.0 || ^4.0.0
 
   '@mastra/core@1.57.0':
     resolution: {integrity: sha512-2ud56Ow5wwyAFegxXkkOHcQfCG0W9Sz1ex2qVf3y/704zwwYZl/RBZXZV/7277RIxWFk8Bnw8pmGtGQ4tZVWEg==}
@@ -2240,6 +2268,10 @@ packages:
     resolution: {integrity: sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==}
     hasBin: true
 
+  react@19.2.8:
+    resolution: {integrity: sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw==}
+    engines: {node: '>=0.10.0'}
+
   readable-stream@2.3.8:
     resolution: {integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==}
 
@@ -2472,6 +2504,11 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  swr@2.5.0:
+    resolution: {integrity: sha512-W0GomadRJe9OfzIoRX0kZHhDSaRRfdiOUeH6uazgR05SibBhDNwfdTbhAxmFtObvkf59fFymo22mooKukosvNA==}
+    peerDependencies:
+      react: ^16.11.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   tar-stream@3.2.0:
     resolution: {integrity: sha512-ojzvCvVaNp6aOTFmG7jaRD0meowIAuPc3cMMhSgKiVWws1GyHbGd/xvnyuRKcKlMpt3qvxx6r0hreCNITP9hIg==}
 
@@ -2484,6 +2521,10 @@ packages:
   thread-stream@4.2.0:
     resolution: {integrity: sha512-e2zZ96wSChazBsbENf/Pcm/4swHt2cEKQ92rhUjkL9GCKiTDJIaTBenjE/m9DXi0QBmTMDkFDdOomUy20A1tDQ==}
     engines: {node: '>=20'}
+
+  throttleit@2.1.0:
+    resolution: {integrity: sha512-nt6AMGKW1p/70DF/hGBdJB57B8Tspmbp5gfJ8ilhLnt7kkr2ye7hzD6NVG8GGErk2HWF34igrL2CXmNIkzKqKw==}
+    engines: {node: '>=18'}
 
   tinyglobby@0.2.17:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
@@ -2576,6 +2617,11 @@ packages:
 
   update-check@1.5.4:
     resolution: {integrity: sha512-5YHsflzHP4t1G+8WGPlvKbJEbAJGCgw+Em+dGR1KmBUbr1J36SJBqlHLjR7oob7sco5hWHGQVcr9B2poIVDDTQ==}
+
+  use-sync-external-store@1.6.0:
+    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -2677,6 +2723,13 @@ snapshots:
       '@vercel/oidc': 3.2.0
       zod: 4.4.3
 
+  '@ai-sdk/mcp@2.0.29(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.7
+      '@ai-sdk/provider-utils': 5.0.25(zod@4.4.3)
+      pkce-challenge: 5.0.1
+      zod: 4.4.3
+
   '@ai-sdk/provider-utils@3.0.30(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 2.0.3
@@ -2723,6 +2776,18 @@ snapshots:
   '@ai-sdk/provider@4.0.7':
     dependencies:
       json-schema: 0.4.0
+
+  '@ai-sdk/react@4.0.61(react@19.2.8)(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/mcp': 2.0.29(zod@4.4.3)
+      '@ai-sdk/provider': 4.0.7
+      '@ai-sdk/provider-utils': 5.0.25(zod@4.4.3)
+      ai: 7.0.58(zod@4.4.3)
+      react: 19.2.8
+      swr: 2.5.0(react@19.2.8)
+      throttleit: 2.1.0
+    transitivePeerDependencies:
+      - zod
 
   '@arcadeai/arcadejs@2.4.1': {}
 
@@ -3150,6 +3215,11 @@ snapshots:
     dependencies:
       '@lukeed/csprng': 1.1.0
 
+  '@mastra/ai-sdk@1.7.2(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(zod@4.4.3)':
+    dependencies:
+      '@mastra/core': 1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3)
+      zod: 4.4.3
+
   '@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3)':
     dependencies:
       '@a2a-js/sdk': 0.3.14(express@5.2.1)
@@ -3239,7 +3309,7 @@ snapshots:
       '@duckdb/node-api': 1.5.2-r.2
       '@mastra/core': 1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3)
 
-  '@mastra/editor@0.13.11(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(@mastra/mcp@1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(zod@4.4.3))(ws@8.21.3)(zod@4.4.3)':
+  '@mastra/editor@0.13.11(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(@mastra/mcp@1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(react@19.2.8)(zod@4.4.3))(ws@8.21.3)(zod@4.4.3)':
     dependencies:
       '@arcadeai/arcadejs': 2.4.1
       '@composio/core': 0.14.1(ws@8.21.3)(zod@4.4.3)
@@ -3248,7 +3318,7 @@ snapshots:
       '@mastra/memory': 1.26.0(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))
       '@mastra/schema-compat': 1.3.5(zod@4.4.3)
     optionalDependencies:
-      '@mastra/mcp': 1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(zod@4.4.3)
+      '@mastra/mcp': 1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(react@19.2.8)(zod@4.4.3)
     transitivePeerDependencies:
       - '@aws-sdk/credential-provider-node'
       - '@smithy/hash-node'
@@ -3271,10 +3341,10 @@ snapshots:
       pino: 10.3.1
       pino-pretty: 13.1.3
 
-  '@mastra/mcp@1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(zod@4.4.3)':
+  '@mastra/mcp@1.15.1(@mastra/core@1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3))(react@19.2.8)(zod@4.4.3)':
     dependencies:
       '@mastra/core': 1.57.0(ai@7.0.58(zod@4.4.3))(express@5.2.1)(zod@4.4.3)
-      '@modelcontextprotocol/ext-apps': 1.7.5(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(zod@4.4.3)
+      '@modelcontextprotocol/ext-apps': 1.7.5(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react@19.2.8)(zod@4.4.3)
       '@modelcontextprotocol/sdk': 1.30.0(zod@4.4.3)
       exit-hook: 5.1.0
       fast-deep-equal: 3.1.3
@@ -3320,11 +3390,13 @@ snapshots:
       hono: 4.13.1
       zod: 4.4.3
 
-  '@modelcontextprotocol/ext-apps@1.7.5(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(zod@4.4.3)':
+  '@modelcontextprotocol/ext-apps@1.7.5(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react@19.2.8)(zod@4.4.3)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.30.0(zod@4.4.3)
       '@standard-schema/spec': 1.1.0
       zod: 4.4.3
+    optionalDependencies:
+      react: 19.2.8
 
   '@modelcontextprotocol/sdk@1.30.0(zod@4.4.3)':
     dependencies:
@@ -4962,6 +5034,8 @@ snapshots:
       minimist: 1.2.8
       strip-json-comments: 2.0.1
 
+  react@19.2.8: {}
+
   readable-stream@2.3.8:
     dependencies:
       core-util-is: 1.0.3
@@ -5280,6 +5354,12 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
+  swr@2.5.0(react@19.2.8):
+    dependencies:
+      dequal: 2.0.3
+      react: 19.2.8
+      use-sync-external-store: 1.6.0(react@19.2.8)
+
   tar-stream@3.2.0:
     dependencies:
       b4a: 1.8.1
@@ -5307,6 +5387,8 @@ snapshots:
   thread-stream@4.2.0:
     dependencies:
       real-require: 1.0.0
+
+  throttleit@2.1.0: {}
 
   tinyglobby@0.2.17:
     dependencies:
@@ -5397,6 +5479,10 @@ snapshots:
     dependencies:
       registry-auth-token: 3.3.2
       registry-url: 3.1.0
+
+  use-sync-external-store@1.6.0(react@19.2.8):
+    dependencies:
+      react: 19.2.8
 
   util-deprecate@1.0.2: {}
 

@@ -11,7 +11,9 @@ import {
 import { agent } from "./agents/agent";
 import { startScheduleTool, stopScheduleTool } from "./tools/schedule-tools";
 import { MastraEditor } from "@mastra/editor";
-
+import { chatRoute } from "@mastra/ai-sdk";
+import { connectionsRoutes } from "./routes/connections-routes";
+import { memoryRoutes } from "./routes/memory-routes";
 
 // const originalFetch = globalThis.fetch;
 // globalThis.fetch = async (input, init) => {
@@ -48,4 +50,14 @@ export const mastra = new Mastra({
       },
     },
   }),
+  server: {
+    apiRoutes: [
+      chatRoute({
+        path: "/chat",
+        agent: "companion",
+      }),
+      ...connectionsRoutes,
+      ...memoryRoutes,
+    ],
+  },
 });
