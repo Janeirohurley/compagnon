@@ -19,20 +19,20 @@
   "dependencies": {
     "@ai-sdk/react": "^4.0.61",
     "@libsql/client": "0.17.4",
-    "@mastra/ai-sdk": "^1.7.2",
-    "@mastra/core": "1.57.0",
-    "@mastra/duckdb": "1.6.0",
-    "@mastra/editor": "^0.13.11",
-    "@mastra/libsql": "1.19.0",
-    "@mastra/mcp": "^1.15.1",
-    "@mastra/memory": "1.26.0",
-    "@mastra/observability": "1.16.5",
+    "@mastra/ai-sdk": "^1.8.0",
+    "@mastra/core": "1.59.0",
+    "@mastra/duckdb": "1.6.1",
+    "@mastra/editor": "^0.13.13",
+    "@mastra/libsql": "1.20.0",
+    "@mastra/mcp": "^1.16.0",
+    "@mastra/memory": "1.26.2",
+    "@mastra/observability": "1.17.0",
     "ai": "^7.0.58",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "latest",
-    "mastra": "1.23.0",
+    "mastra": "1.25.0",
     "typescript": "^6.0.3"
   }
 }

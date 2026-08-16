@@ -4,6 +4,7 @@
     "": {
       "order": [
         ".agents",
+        ".tree-generator.json",
         "src",
         ".env.example",
         ".gitignore",
@@ -18,12 +19,14 @@
         "tsconfig.json",
         ".claude",
         ".vscode",
-        "subagent-docs"
+        "subagent-docs",
+        "refacory.md"
       ],
       "excluded": [
         ".claude",
         ".vscode",
-        "subagent-docs"
+        "subagent-docs",
+        "refacory.md"
       ]
     },
     ".agents": {

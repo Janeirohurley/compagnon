@@ -8,12 +8,14 @@ import {
   Observability,
   SensitiveDataFilter,
 } from "@mastra/observability";
-import { agent } from "./agents/agent";
+import { agent } from "./agents/companion/agent";
 import { startScheduleTool, stopScheduleTool } from "./tools/schedule-tools";
+import { memoryWorkflowTool } from "./tools/memory-workflow-tool";
 import { MastraEditor } from "@mastra/editor";
 import { chatRoute } from "@mastra/ai-sdk";
 import { connectionsRoutes } from "./routes/connections-routes";
 import { memoryRoutes } from "./routes/memory-routes";
+import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 
 // const originalFetch = globalThis.fetch;
 // globalThis.fetch = async (input, init) => {
@@ -28,7 +30,8 @@ import { memoryRoutes } from "./routes/memory-routes";
 
 export const mastra = new Mastra({
   agents: { agent },
-  tools: { startScheduleTool, stopScheduleTool },
+  tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool },
+  workflows: { agentMemoryWorkflow },
   storage: new MastraCompositeStore({
     id: "composite-storage",
     default: new LibSQLStore({

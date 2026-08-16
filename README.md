@@ -210,9 +210,86 @@ compagnon/
 |-- src/
 |   `-- mastra/
 |       |-- agents/
-|       |   |-- agent.ts
-|       |   |-- delegation.ts
-|       |   `-- memory-agent.ts
+|       |   |-- companion/
+|       |   |   |-- agent.ts
+|       |   |   `-- index.ts
+|       |   `-- memory/
+|       |       |-- domain/
+|       |       |   |-- schemas/
+|       |       |   |   |-- archive-stale.ts
+|       |       |   |   |-- consolidate.ts
+|       |       |   |   |-- extract-facts.ts
+|       |       |   |   |-- find-stale.ts
+|       |       |   |   |-- forget.ts
+|       |       |   |   |-- get-procedure.ts
+|       |       |   |   |-- get.ts
+|       |       |   |   |-- index.ts
+|       |       |   |   |-- list.ts
+|       |       |   |   |-- record-decision.ts
+|       |       |   |   |-- record-episode.ts
+|       |       |   |   |-- remember.ts
+|       |       |   |   |-- retrieve-context.ts
+|       |       |   |   |-- search.ts
+|       |       |   |   |-- supersede.ts
+|       |       |   |   |-- update-procedure.ts
+|       |       |   |   |-- update.ts
+|       |       |   |   `-- verify.ts
+|       |       |   |-- contracts.ts
+|       |       |   `-- types.ts
+|       |       |-- hooks/
+|       |       |   `-- index.ts
+|       |       |-- observability/
+|       |       |   `-- logger.ts
+|       |       |-- repositories/
+|       |       |   |-- conflict-repository.ts
+|       |       |   |-- decision-repository.ts
+|       |       |   |-- episode-repository.ts
+|       |       |   |-- memory-repository.ts
+|       |       |   `-- procedure-repository.ts
+|       |       |-- services/
+|       |       |   |-- conflict.ts
+|       |       |   |-- consolidation.ts
+|       |       |   |-- decisions.ts
+|       |       |   |-- episodes.ts
+|       |       |   |-- forget.ts
+|       |       |   |-- get.ts
+|       |       |   |-- index.ts
+|       |       |   |-- list.ts
+|       |       |   |-- memory-manager.ts
+|       |       |   |-- procedures-list.ts
+|       |       |   |-- procedures.ts
+|       |       |   |-- record-decision.ts
+|       |       |   |-- record-episode.ts
+|       |       |   |-- remember.ts
+|       |       |   |-- search.ts
+|       |       |   |-- update.ts
+|       |       |   `-- verify.ts
+|       |       |-- storage/
+|       |       |   |-- client.ts
+|       |       |   `-- schema.ts
+|       |       |-- tests/
+|       |       |-- tools/
+|       |       |   |-- archive-stale.ts
+|       |       |   |-- consolidate.ts
+|       |       |   |-- extract-facts.ts
+|       |       |   |-- find-stale.ts
+|       |       |   |-- forget.ts
+|       |       |   |-- get-procedure.ts
+|       |       |   |-- get.ts
+|       |       |   |-- index.ts
+|       |       |   |-- list.ts
+|       |       |   |-- record-decision.ts
+|       |       |   |-- record-episode.ts
+|       |       |   |-- remember.ts
+|       |       |   |-- retrieve-context.ts
+|       |       |   |-- search.ts
+|       |       |   |-- supersede.ts
+|       |       |   |-- update-procedure.ts
+|       |       |   |-- update.ts
+|       |       |   `-- verify.ts
+|       |       |-- agent.ts
+|       |       |-- delegation.ts
+|       |       `-- index.ts
 |       |-- config/
 |       |   |-- companion-config.ts
 |       |   `-- model-config.ts
@@ -230,25 +307,18 @@ compagnon/
 |       |   |-- outline.ts
 |       |   |-- plane.ts
 |       |   `-- ssh.ts
-|       |-- memory/
-|       |   |-- db/
-|       |   |   |-- client.ts
-|       |   |   `-- schema.ts
-|       |   |-- hooks/
-|       |   |   `-- index.ts
-|       |   |-- manager/
-|       |   |   `-- index.ts
-|       |   |-- tools/
-|       |   |   `-- index.ts
-|       |   |-- types/
-|       |   |   `-- index.ts
-|       |   |-- consolidation.ts
-|       |   `-- observability.ts
 |       |-- models/
 |       |-- routes/
 |       |   |-- connections-routes.ts
 |       |   `-- memory-routes.ts
+|       |-- shared/
+|       |   |-- errors/
+|       |   |-- logging/
+|       |   |-- types/
+|       |   `-- utils/
 |       |-- tools/
+|       |   |-- memory-hooks-tool.ts
+|       |   |-- memory-workflow-tool.ts
 |       |   |-- outline/
 |       |   |-- plane/
 |       |   |-- shell/
@@ -263,6 +333,7 @@ compagnon/
 |       |   |-- schedule-tools.ts
 |       |   `-- ssh-command-tool.ts
 |       |-- workflows/
+|       |   `-- agent-memory-workflow.ts
 |       `-- index.ts
 |-- .env.example
 |-- .gitignore

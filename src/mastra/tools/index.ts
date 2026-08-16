@@ -1,3 +1,4 @@
+import { memoryHooksTool } from './memory-hooks-tool';
 import { dateTimeTool } from './date-time-tool';
 import {
   deleteProjectFileTool,
@@ -18,6 +19,7 @@ import {
   planeSearchIssuesTool,
   planeUpdateIssueTool,
 } from './plane-api-tools';
+// Memory tools are now in agents/memory module
 import {
   memorySearchTool,
   memoryRememberTool,
@@ -35,11 +37,12 @@ import {
   memoryConsolidateTool,
   memoryFindStaleTool,
   memoryArchiveStaleTool,
-} from '../memory/tools';
+} from '../agents/memory/tools';
 
 export function getCompanionTools() {
   return {
     companion_foundation: companionFoundationTool,
+    memory_hooks: memoryHooksTool,
     date_time: dateTimeTool,
 
     list_project_files: listProjectFilesTool,
