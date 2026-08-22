@@ -10,6 +10,7 @@ import {
 } from "@mastra/observability";
 import { agent } from "./agents/companion/agent";
 import { plannerAgent } from "./agents/planner";
+
 import { startScheduleTool, stopScheduleTool } from "./tools/schedule-tools";
 import { memoryWorkflowTool } from "./tools/memory-workflow-tool";
 import { MastraEditor } from "@mastra/editor";
@@ -17,6 +18,9 @@ import { chatRoute } from "@mastra/ai-sdk";
 import { connectionsRoutes } from "./routes/connections-routes";
 import { memoryRoutes } from "./routes/memory-routes";
 import { plannerRoutes } from "./routes/planner-routes";
+import { githubRoutes } from "./routes/github-routes";
+import { planeRoutes } from "./routes/plane-routes";
+import { outlineRoutes } from "./routes/outline-routes";
 import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 
 // const originalFetch = globalThis.fetch;
@@ -64,6 +68,9 @@ export const mastra = new Mastra({
       ...connectionsRoutes,
       ...memoryRoutes,
       ...plannerRoutes,
+      ...githubRoutes,
+      ...planeRoutes,
+      ...outlineRoutes,
     ],
   },
 });

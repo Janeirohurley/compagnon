@@ -1,7 +1,6 @@
 import { createFilesystemMcp } from './filesystem';
 import { createSshMcp } from './ssh';
-import { createOutlineMcp } from './outline';
-import { createGithubMcp } from './github';
+
 import { createGitMcp } from './git';
 import { createPlaneMcp } from './plane';
 import { MCPClient } from '@mastra/mcp';
@@ -56,8 +55,8 @@ export async function getCompanionMcpTools() {
 
   await loadMcp('filesystem', createFilesystemMcp, tools);
   await loadMcp('ssh', createSshMcp, tools);
-  await loadMcp('outline', createOutlineMcp, tools);
-  await loadMcp('github', createGithubMcp, tools);
+  // Outline MCP is loaded exclusively by the Outline Agent
+  // GitHub MCP is loaded exclusively by the GitHub Agent
   await loadMcp('git', createGitMcp, tools);
 
   if (process.env.PLANE_MCP_ENABLED === 'true') {

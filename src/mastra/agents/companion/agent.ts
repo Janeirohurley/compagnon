@@ -8,6 +8,9 @@ import { getCompanionTools } from '../../tools';
 import { getCompanionMcpTools } from '../../mcp';
 import { memoryAgent } from '../memory';
 import { plannerAgent } from '../planner';
+import { githubAgent } from '../github';
+import { planeAgent } from '../plane';
+import { outlineAgent } from '../outline';
 import { buildMemoryDelegationPrompt, parseMemoryTaskResult, type MemoryTask } from '../memory/delegation';
 import { retrieveRelevantMemories, extractTaskMemories } from '../memory/hooks';
 
@@ -61,11 +64,8 @@ export const companionAgent = new Agent({
     '.agents/skills/policy-safety',
     '.agents/skills/master-communication',
     '.agents/skills/planning-sync',
-    '.agents/skills/outline-knowledge',
-    '.agents/skills/plane-knowledge',
     '.agents/skills/filesystem',
     '.agents/skills/git',
-    '.agents/skills/github',
     '.agents/skills/developer',
     '.agents/skills/documentation',
     '.agents/skills/git-commit',
@@ -77,10 +77,7 @@ export const companionAgent = new Agent({
     '.agents/skills/doc-and-modernize',
     '.agents/skills/draw-io-diagram-generator',
     '.agents/skills/example-skill',
-    '.agents/skills/github-issue-query',
-    '.agents/skills/github-issues',
-    '.agents/skills/github-labels-query',
-    '.agents/skills/github-mcp-server',
+
     '.agents/skills/markdown-to-html',
     '.agents/skills/mcp-implementation-security-review',
     '.agents/skills/mcp-security-audit',
@@ -98,6 +95,9 @@ export const companionAgent = new Agent({
   agents: {
     memory: memoryAgent,
     planner: plannerAgent,
+    github: githubAgent,
+    plane: planeAgent,
+    outline: outlineAgent,
   },
 });
 

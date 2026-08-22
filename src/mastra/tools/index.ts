@@ -8,17 +8,7 @@ import {
   writeProjectFileTool,
 } from './project-file-tools';
 import { companionFoundationTool } from './companion-foundation-tool';
-import {
-  planeAddIssueCommentTool,
-  planeCreateIssueTool,
-  planeGetIssueTool,
-  planeListIssueCommentsTool,
-  planeListIssuesTool,
-  planeListProjectsTool,
-  planeListStatesTool,
-  planeSearchIssuesTool,
-  planeUpdateIssueTool,
-} from './plane-api-tools';
+// Plane tools are now in the Plane Agent (agents/plane/)
 // Memory tools are now in agents/memory module
 import {
   memorySearchTool,
@@ -50,16 +40,6 @@ export function getCompanionTools() {
     write_project_file: writeProjectFileTool,
     edit_project_file: editProjectFileTool,
     delete_project_file: deleteProjectFileTool,
-
-    plane_list_projects: planeListProjectsTool,
-    plane_list_states: planeListStatesTool,
-    plane_list_issues: planeListIssuesTool,
-    plane_get_issue: planeGetIssueTool,
-    plane_search_issues: planeSearchIssuesTool,
-    plane_create_issue: planeCreateIssueTool,
-    plane_update_issue: planeUpdateIssueTool,
-    plane_list_issue_comments: planeListIssueCommentsTool,
-    plane_add_issue_comment: planeAddIssueCommentTool,
 
     // Memory tools
     memory_search: memorySearchTool,

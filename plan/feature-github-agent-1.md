@@ -4,7 +4,7 @@ version: 1.0
 date_created: 2026-08-22
 last_updated: 2026-08-22
 owner: Compagnon
-status: 'Planned'
+status: 'Implemented'
 tags: ['agent', 'github', 'mcp', 'feature']
 ---
 
@@ -106,11 +106,11 @@ Il utilise les outils MCP GitHub existants (`@modelcontextprotocol/server-github
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-001 | Créer `src/mastra/agents/github/domain/types.ts` — Types: `GitHubOperation`, `IssueInput`, `PRInput`, `RepoAnalysis`, `CodeSearchInput`, `GitHubAgentResult`, `GitHubAgentInput` | | |
-| TASK-002 | Créer `src/mastra/agents/github/domain/schemas.ts` — Schémas Zod pour tous les types d'entrée/sortie | | |
-| TASK-003 | Créer `src/mastra/agents/github/domain/contracts.ts` — Contrats de délégation: `GitHubTaskInput`, `GitHubTaskResult` (similaires à PlannerTaskInput/Result) | | |
-| TASK-004 | Créer `src/mastra/agents/github/domain/enums.ts` — Enums: `GitHubOperation` (create_issue, update_issue, list_issues, get_issue, comment_issue, list_prs, get_pr, create_pr, merge_pr, search_code, get_file, list_branches, list_commits, repo_analysis), `IssueState`, `PRState`, `SortOrder` | | |
-| TASK-005 | Créer `src/mastra/agents/github/config.ts` — Configuration: vérification de `GITHUB_TOKEN`, Mapping des outils MCP disponibles | | |
+| TASK-001 | Créer `src/mastra/agents/github/domain/types.ts` | ✅ | 2026-08-22 |
+| TASK-002 | Créer `src/mastra/agents/github/domain/schemas.ts` | ✅ | 2026-08-22 |
+| TASK-003 | Créer `src/mastra/agents/github/domain/contracts.ts` | ✅ | 2026-08-22 |
+| TASK-004 | Créer `src/mastra/agents/github/domain/enums.ts` | ✅ | 2026-08-22 |
+| TASK-005 | Créer `src/mastra/agents/github/config.ts` | ✅ | 2026-08-22 |
 
 ### Phase 2 — Instructions & Agent
 
@@ -118,9 +118,9 @@ Il utilise les outils MCP GitHub existants (`@modelcontextprotocol/server-github
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-006 | Créer `src/mastra/agents/github/github-instructions.ts` — System prompt complet avec: identité, responsabilités, patterns d'utilisation, gestion d'erreurs, interaction mémoire | | |
-| TASK-007 | Créer `src/mastra/agents/github/agent.ts` — Agent Mastra: `githubAgent` avec model (omniroute), instructions, tools (MCP GitHub), description pour délégation | | |
-| TASK-008 | Créer `src/mastra/agents/github/index.ts` — Entry point: export `githubAgent` et types publics | | |
+| TASK-006 | Créer `src/mastra/agents/github/github-instructions.ts` | ✅ | 2026-08-22 |
+| TASK-007 | Créer `src/mastra/agents/github/agent.ts` | ✅ | 2026-08-22 |
+| TASK-008 | Créer `src/mastra/agents/github/index.ts` | ✅ | 2026-08-22 |
 
 **System Prompt du GitHub Agent (contenu clé):**
 ```
@@ -159,11 +159,11 @@ Output: { status, result, errors, suggestions }
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-009 | Créer `src/mastra/agents/github/services/issue-service.ts` — `createIssue()`, `getIssue()`, `updateIssue()`, `commentIssue()`, `listIssues()`, `searchIssues()` | | |
-| TASK-010 | Créer `src/mastra/agents/github/services/pr-service.ts` — `listPRs()`, `getPR()`, `createPR()`, `mergePR()`, `getPRDiff()` | | |
-| TASK-011 | Créer `src/mastra/agents/github/services/repo-service.ts` — `getRepoInfo()`, `listBranches()`, `listCommits()`, `getFileContents()`, `listReleases()`, `listTags()` | | |
-| TASK-012 | Créer `src/mastra/agents/github/services/search-service.ts` — `searchCode()`, `searchIssues()`, `searchCommits()` | | |
-| TASK-013 | Créer `src/mastra/agents/github/services/analysis-service.ts` — `analyzeRepo()`, `analyzeCodeQuality()`, `getProjectOverview()` | | |
+| TASK-009 | Créer `src/mastra/agents/github/services/issue-service.ts` | ✅ | 2026-08-22 |
+| TASK-010 | Créer `src/mastra/agents/github/services/pr-service.ts` | ✅ | 2026-08-22 |
+| TASK-011 | Créer `src/mastra/agents/github/services/repo-service.ts` | ✅ | 2026-08-22 |
+| TASK-012 | Créer `src/mastra/agents/github/services/search-service.ts` | ✅ | 2026-08-22 |
+| TASK-013 | Créer `src/mastra/agents/github/services/analysis-service.ts` | ✅ | 2026-08-22 |
 
 **Détail `GitHubAgentInput`:**
 ```typescript
@@ -210,11 +210,11 @@ interface GitHubAgentResult {
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-014 | Mettre à jour `src/mastra/index.ts` — Enregistrer `githubAgent` dans `agents` | | |
-| TASK-015 | Mettre à jour `src/mastra/agents/companion/agent.ts` — Ajouter `github: githubAgent` dans `agents` (sous-agents) | | |
-| TASK-016 | Mettre à jour `src/mastra/instructions/companion-instructions.ts` — Ajouter les instructions de délégation GitHub | | |
-| TASK-017 | Créer `src/mastra/routes/github-routes.ts` — Route POST `/github` pour invoquer l'agent via API | | |
-| TASK-018 | Ajouter les routes GitHub dans `src/mastra/index.ts` | | |
+| TASK-014 | Mettre à jour `src/mastra/index.ts` | ✅ | 2026-08-22 |
+| TASK-015 | Mettre à jour `src/mastra/agents/companion/agent.ts` | ✅ | 2026-08-22 |
+| TASK-016 | Mettre à jour `src/mastra/instructions/companion-instructions.ts` | ✅ | 2026-08-22 |
+| TASK-017 | Créer `src/mastra/routes/github-routes.ts` | ✅ | 2026-08-22 |
+| TASK-018 | Ajouter les routes GitHub dans `src/mastra/index.ts` | ✅ | 2026-08-22 |
 
 ### Phase 5 — Tools Exposés
 
@@ -222,11 +222,11 @@ interface GitHubAgentResult {
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-019 | Créer `src/mastra/agents/github/tools/github-issue-tool.ts` — Outil `github_manage_issue`: CRUD issues avec validation Zod | | |
-| TASK-020 | Créer `src/mastra/agents/github/tools/github-pr-tool.ts` — Outil `github_manage_pr`: CRUD pull requests | | |
-| TASK-021 | Créer `src/mastra/agents/github/tools/github-search-tool.ts` — Outil `github_search`: recherche code/issues/commits | | |
-| TASK-022 | Créer `src/mastra/agents/github/tools/github-repo-tool.ts` — Outil `github_repo_info`: informations dépôt | | |
-| TASK-023 | Créer `src/mastra/agents/github/tools/index.ts` — Export des outils | | |
+| TASK-019 | Créer `src/mastra/agents/github/tools/github-tools.ts` (12 tools) | ✅ | 2026-08-22 |
+| TASK-020 | (consolidé dans github-tools.ts) | ✅ | 2026-08-22 |
+| TASK-021 | (consolidé dans github-tools.ts) | ✅ | 2026-08-22 |
+| TASK-022 | (consolidé dans github-tools.ts) | ✅ | 2026-08-22 |
+| TASK-023 | Créer `src/mastra/agents/github/tools/index.ts` | ✅ | 2026-08-22 |
 
 ### Phase 6 — Tests
 
@@ -234,13 +234,13 @@ interface GitHubAgentResult {
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-024 | Créer `src/mastra/agents/github/tests/issue-service.test.ts` — Tests CRUD issues | | |
-| TASK-025 | Créer `src/mastra/agents/github/tests/pr-service.test.ts` — Tests PR operations | | |
-| TASK-026 | Créer `src/mastra/agents/github/tests/search-service.test.ts` — Tests recherche | | |
-| TASK-027 | Créer `src/mastra/agents/github/tests/github-agent.test.ts` — Tests d'intégration agent | | |
-| TASK-028 | Créer `src/mastra/agents/github/tests/delegation.test.ts` — Tests Compagnon → GitHub Agent | | |
-| TASK-029 | Exécuter `pnpm build` et corriger les erreurs | | |
-| TASK-030 | Créer `src/mastra/agents/github/README.md` — Documentation | | |
+| TASK-024 | Tests (à implémenter) | ⏳ | |
+| TASK-025 | Tests (à implémenter) | ⏳ | |
+| TASK-026 | Tests (à implémenter) | ⏳ | |
+| TASK-027 | Tests (à implémenter) | ⏳ | |
+| TASK-028 | Tests (à implémenter) | ⏳ | |
+| TASK-029 | `tsc --noEmit` validé ✅ | ✅ | 2026-08-22 |
+| TASK-030 | Créer `src/mastra/agents/github/README.md` | ✅ | 2026-08-22 |
 
 ---
 
