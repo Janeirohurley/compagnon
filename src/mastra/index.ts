@@ -9,12 +9,14 @@ import {
   SensitiveDataFilter,
 } from "@mastra/observability";
 import { agent } from "./agents/companion/agent";
+import { plannerAgent } from "./agents/planner";
 import { startScheduleTool, stopScheduleTool } from "./tools/schedule-tools";
 import { memoryWorkflowTool } from "./tools/memory-workflow-tool";
 import { MastraEditor } from "@mastra/editor";
 import { chatRoute } from "@mastra/ai-sdk";
 import { connectionsRoutes } from "./routes/connections-routes";
 import { memoryRoutes } from "./routes/memory-routes";
+import { plannerRoutes } from "./routes/planner-routes";
 import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 
 // const originalFetch = globalThis.fetch;
@@ -29,7 +31,7 @@ import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 // };
 
 export const mastra = new Mastra({
-  agents: { agent },
+  agents: { agent, planner: plannerAgent },
   tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool },
   workflows: { agentMemoryWorkflow },
   storage: new MastraCompositeStore({
@@ -61,6 +63,7 @@ export const mastra = new Mastra({
       }),
       ...connectionsRoutes,
       ...memoryRoutes,
+      ...plannerRoutes,
     ],
   },
 });

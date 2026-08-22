@@ -1,6 +1,5 @@
 import { Agent } from '@mastra/core/agent';
 import { getCompanionModelConfig } from '../../config/model-config';
-import { memoryManager } from './services/memory-manager';
 import {
   memorySearchTool,
   memoryRememberTool,

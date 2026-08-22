@@ -89,17 +89,16 @@ const executeTaskStep = createStep({
 
       // Get text from response
       let text = "Task completed but no result returned.";
-      if (response) {
-        // Handle response.text (string) or response as a stream/object
-        if (typeof response.text === 'string') {
-          text = response.text;
-        } else if (typeof response === 'string') {
-          text = response;
-        } else if (response instanceof Response) {
-          text = await response.text() || text;
+      const resp = response as any;
+      if (resp) {
+        if (typeof resp.text === 'string') {
+          text = resp.text;
+        } else if (typeof resp === 'string') {
+          text = resp;
+        } else if (typeof resp.text === 'function') {
+          text = await resp.text() || text;
         } else {
-          // Try to get text property or convert to string
-          text = String(response?.text || response?.toString?.() || JSON.stringify(response));
+          text = String(resp.text || JSON.stringify(resp));
         }
       }
 

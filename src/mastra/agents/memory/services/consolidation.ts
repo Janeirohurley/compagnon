@@ -2,8 +2,6 @@
 import { findEpisodesByProject } from "../repositories/episode-repository";
 import { findMemoriesByScope, archiveMemoryById, findStaleMemories as findStaleMemoriesFromRepo } from "../repositories/memory-repository";
 import { createProcedure } from "./procedures";
-import type { Episode } from "../domain/types";
-
 export interface ConsolidationInput {
   project?: string;
   repository?: string;

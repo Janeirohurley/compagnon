@@ -34,7 +34,7 @@ export const memoryRoutes = [
   {
     path: '/memory/list',
     method: 'GET' as const,
-    handler: async (c: any) => {
+    handler: async () => {
       const memories = await memoryManager.listMemories();
       return json({ memories });
     },

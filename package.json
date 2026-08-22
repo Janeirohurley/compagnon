@@ -17,6 +17,7 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.30",
     "@ai-sdk/react": "^4.0.61",
     "@libsql/client": "0.17.4",
     "@mastra/ai-sdk": "^1.8.0",

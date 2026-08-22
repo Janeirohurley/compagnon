@@ -1,5 +1,5 @@
 // Memory Hooks Tool - Enables automatic memory retrieval and extraction
-import { executeWithMemoryHooks, executeMemoryTask, retrieveRelevantMemories, extractTaskMemories, extractFactsFromText } from "../agents/memory";
+import { executeMemoryTask, retrieveRelevantMemories, extractFactsFromText } from "../agents/memory";
 
 export const memoryHooksTool = {
   name: "memory_hooks",

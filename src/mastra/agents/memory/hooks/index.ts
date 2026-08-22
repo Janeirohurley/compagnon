@@ -1,7 +1,7 @@
 // Memory hooks for automatic retrieval and extraction
 import { memoryManager } from "../services/memory-manager";
 import { memoryAgent } from "../agent";
-import type { MemorySearchInput, RememberInput, EpisodeInput } from "../domain/types";
+import type { MemorySearchInput, EpisodeInput } from "../domain/types";
 import type { MemoryTaskResult } from "../delegation";
 
 export interface TaskContext {
@@ -14,7 +14,7 @@ export interface TaskContext {
 
 // Pre-task: retrieve relevant memories before execution
 export async function retrieveRelevantMemories(context: TaskContext): Promise<void> {
-  const { task, project, repository, files } = context;
+  const { task, project, repository } = context;
   
   // Search for relevant memories
   const searchInput: MemorySearchInput = {
@@ -49,7 +49,7 @@ export async function extractTaskMemories(
     observations?: string[];
   }
 ): Promise<void> {
-  const { task, project, repository, files, tools } = context;
+  const { task, project, repository, tools } = context;
   
   // Record episode
   const episodeInput: EpisodeInput = {

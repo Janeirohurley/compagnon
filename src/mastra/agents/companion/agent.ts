@@ -7,6 +7,7 @@ import { getCompanionModelConfig } from '../../config/model-config';
 import { getCompanionTools } from '../../tools';
 import { getCompanionMcpTools } from '../../mcp';
 import { memoryAgent } from '../memory';
+import { plannerAgent } from '../planner';
 import { buildMemoryDelegationPrompt, parseMemoryTaskResult, type MemoryTask } from '../memory/delegation';
 import { retrieveRelevantMemories, extractTaskMemories } from '../memory/hooks';
 
@@ -16,21 +17,21 @@ const nativeTools = getCompanionTools();
 const mcpTools = await getCompanionMcpTools();
 
 // Memory hooks wrapper - optional middleware
-async function executeWithMemory(
-  task: string,
-  execute: () => Promise<{ text: string }>
-): Promise<{ text: string }> {
-  await retrieveRelevantMemories({ task: task.substring(0, 500) });
+// async function executeWithMemory(
+//   task: string,
+//   execute: () => Promise<{ text: string }>
+// ): Promise<{ text: string }> {
+//   await retrieveRelevantMemories({ task: task.substring(0, 500) });
 
-  const result = await execute();
+//   const result = await execute();
 
-  await extractTaskMemories(
-    { task: task.substring(0, 500) },
-    { success: true, result: result.text.substring(0, 500) }
-  );
+//   await extractTaskMemories(
+//     { task: task.substring(0, 500) },
+//     { success: true, result: result.text.substring(0, 500) }
+//   );
 
-  return result;
-}
+//   return result;
+// }
 
 export const companionAgent = new Agent({
   id: 'companion',
@@ -96,6 +97,7 @@ export const companionAgent = new Agent({
   // Subagents - specialized agents for specific tasks
   agents: {
     memory: memoryAgent,
+    planner: plannerAgent,
   },
 });
 
