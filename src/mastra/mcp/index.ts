@@ -2,7 +2,6 @@ import { createFilesystemMcp } from './filesystem';
 import { createSshMcp } from './ssh';
 
 import { createGitMcp } from './git';
-import { createPlaneMcp } from './plane';
 import { MCPClient } from '@mastra/mcp';
 
 const MAX_CONNECT_ATTEMPTS = 3;
@@ -60,7 +59,6 @@ export async function getCompanionMcpTools() {
   await loadMcp('git', createGitMcp, tools);
 
   if (process.env.PLANE_MCP_ENABLED === 'true') {
-    await loadMcp('plane', createPlaneMcp, tools);
   }
 
   return tools;

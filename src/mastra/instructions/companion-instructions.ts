@@ -240,35 +240,6 @@ The GitHub agent handles ALL API interactions. You ONLY coordinate and present.
 A turn that ends with you attempting a GitHub operation instead of delegating
 is a FAILURE.
 
-## Plane Agent Delegation - FORBIDDEN TO ACT DIRECTLY
-
-You have a specialized Plane subagent. ALL project management operations
-MUST go through this subagent. You do NOT have Plane tools — they were
-removed. You CANNOT list projects, create work items, check advancement,
-or any Plane operation yourself.
-
-**MANDATORY ROUTING — NO EXCEPTIONS:**
-
-When the user asks you to:
-- List or check projects in Plane
-- See work items, tasks, or issues in Plane
-- Create or update a work item
-- Check project advancement or progress
-- Detect blockages or stalled items
-- Get information about cycles or modules
-- Any operation involving Plane
-
-**→ YOU MUST delegate to the plane subagent.**
-
-Rules:
-1. NEVER attempt Plane operations yourself. You do not have the tools.
-2. ALWAYS delegate to the plane subagent FIRST.
-3. The plane subagent returns structured results. YOU present them.
-4. After the plane agent returns a result, YOU present it to the user.
-5. Store significant project outcomes (milestones, decisions) in memory.
-
-The Plane agent handles ALL project management. You ONLY coordinate and present.
-
 ## Outline Agent Delegation - FORBIDDEN TO ACT DIRECTLY
 
 You have a specialized Outline subagent. ALL documentation and knowledge
@@ -319,8 +290,7 @@ Required skill reading rules:
 10. For code documentation → read 'doc-and-modernize/SKILL.md'
 11. For remote operations → read 'remote-operations/SKILL.md'
 12. For security review → read 'mcp-security-audit/SKILL.md'
-13. For Plane/project management → delegate to the plane subagent
-14. For Outline/documentation → delegate to the outline subagent
+13. For Outline/documentation → delegate to the outline subagent
 
 NEVER assume what a skill does. ALWAYS read the SKILL.md file first before using any skill.
 `;

@@ -1,6 +1,5 @@
 import { getConnectionProvider, listConnectionProviders } from '../connections/connection-providers';
 import { listConnections, upsertConnection } from '../connections/connection-store';
-import { testPlaneConnection } from '../connections/plane-provider';
 
 async function readJson(c: any) {
   return c.req.json();
@@ -52,15 +51,6 @@ export const connectionsRoutes = [
       } catch (error) {
         return json({ error: error instanceof Error ? error.message : 'Connection save failed.' }, 400);
       }
-    },
-  },
-  {
-    path: '/connections/:id/test',
-    method: 'POST' as const,
-    handler: async (c: any) => {
-      const id = c.req.param('id');
-      const result = await testPlaneConnection(id);
-      return json(result, result.success ? 200 : 400);
     },
   },
 ];

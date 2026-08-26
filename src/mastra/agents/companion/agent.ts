@@ -9,7 +9,6 @@ import { getCompanionMcpTools } from '../../mcp';
 import { memoryAgent } from '../memory';
 import { plannerAgent } from '../planner';
 import { githubAgent } from '../github';
-import { planeAgent } from '../plane';
 import { outlineAgent } from '../outline';
 import { buildMemoryDelegationPrompt, parseMemoryTaskResult, type MemoryTask } from '../memory/delegation';
 import { retrieveRelevantMemories, extractTaskMemories } from '../memory/hooks';
@@ -96,7 +95,6 @@ export const companionAgent = new Agent({
     memory: memoryAgent,
     planner: plannerAgent,
     github: githubAgent,
-    plane: planeAgent,
     outline: outlineAgent,
   },
 });

@@ -8,7 +8,6 @@ import {
   writeProjectFileTool,
 } from './project-file-tools';
 import { companionFoundationTool } from './companion-foundation-tool';
-// Plane tools are now in the Plane Agent (agents/plane/)
 // Memory tools are now in agents/memory module
 import {
   memorySearchTool,

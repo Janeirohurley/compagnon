@@ -19,7 +19,6 @@ import { connectionsRoutes } from "./routes/connections-routes";
 import { memoryRoutes } from "./routes/memory-routes";
 import { plannerRoutes } from "./routes/planner-routes";
 import { githubRoutes } from "./routes/github-routes";
-import { planeRoutes } from "./routes/plane-routes";
 import { outlineRoutes } from "./routes/outline-routes";
 import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 
@@ -69,7 +68,6 @@ export const mastra = new Mastra({
       ...memoryRoutes,
       ...plannerRoutes,
       ...githubRoutes,
-      ...planeRoutes,
       ...outlineRoutes,
     ],
   },
