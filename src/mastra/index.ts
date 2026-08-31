@@ -10,6 +10,8 @@ import {
 } from "@mastra/observability";
 import { agent } from "./agents/companion/agent";
 import { plannerAgent } from "./agents/planner";
+import { planeAgent } from "./agents/plane";
+import { planeTools } from "./plane";
 
 import { startScheduleTool, stopScheduleTool } from "./tools/schedule-tools";
 import { memoryWorkflowTool } from "./tools/memory-workflow-tool";
@@ -21,6 +23,8 @@ import { plannerRoutes } from "./routes/planner-routes";
 import { githubRoutes } from "./routes/github-routes";
 import { outlineRoutes } from "./routes/outline-routes";
 import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
+import { planeContextWorkflow } from "./workflows/plane-context-workflow";
+import { planeContextWorkflowTool } from "./tools/plane-context-workflow-tool";
 
 // const originalFetch = globalThis.fetch;
 // globalThis.fetch = async (input, init) => {
@@ -34,9 +38,9 @@ import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 // };
 
 export const mastra = new Mastra({
-  agents: { agent, planner: plannerAgent },
-  tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool },
-  workflows: { agentMemoryWorkflow },
+  agents: { agent, planner: plannerAgent, plane: planeAgent },
+  tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool, plane_context_workflow: planeContextWorkflowTool, ...planeTools },
+  workflows: { agentMemoryWorkflow, planeContextWorkflow },
   storage: new MastraCompositeStore({
     id: "composite-storage",
     default: new LibSQLStore({
@@ -63,6 +67,10 @@ export const mastra = new Mastra({
       chatRoute({
         path: "/chat",
         agent: "companion",
+      }),
+      chatRoute({
+        path: "/chat/plane",
+        agent: "plane",
       }),
       ...connectionsRoutes,
       ...memoryRoutes,
