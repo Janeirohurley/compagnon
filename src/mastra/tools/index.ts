@@ -8,6 +8,8 @@ import {
   writeProjectFileTool,
 } from './project-file-tools';
 import { companionFoundationTool } from './companion-foundation-tool';
+import { planeTools } from '../plane';
+import { planeContextWorkflowTool } from './plane-context-workflow-tool';
 // Memory tools are now in agents/memory module
 import {
   memorySearchTool,
@@ -39,6 +41,10 @@ export function getCompanionTools() {
     write_project_file: writeProjectFileTool,
     edit_project_file: editProjectFileTool,
     delete_project_file: deleteProjectFileTool,
+
+    // Plane native tools
+    plane_context_workflow: planeContextWorkflowTool,
+    ...planeTools,
 
     // Memory tools
     memory_search: memorySearchTool,

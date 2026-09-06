@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "mastra dev",
     "build": "mastra build",
-    "start": "mastra start"
+    "start": "mastra start",
+    "test": "vitest run src/mastra/plane/tests/*.test.ts"
   },
   "keywords": [],
   "author": "",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@types/node": "latest",
     "mastra": "1.25.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
   }
 }

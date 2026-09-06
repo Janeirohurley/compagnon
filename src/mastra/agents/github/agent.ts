@@ -80,7 +80,6 @@ export const githubAgent = new Agent({
       generateTitle: false,
     },
   }),
-  maxSteps: 30,
   tools: {
     ...mcpTools,
     github_get_my_profile: getMyProfileTool,

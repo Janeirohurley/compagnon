@@ -10,6 +10,7 @@ import { memoryAgent } from '../memory';
 import { plannerAgent } from '../planner';
 import { githubAgent } from '../github';
 import { outlineAgent } from '../outline';
+import { planeAgent } from '../plane';
 import { buildMemoryDelegationPrompt, parseMemoryTaskResult, type MemoryTask } from '../memory/delegation';
 import { retrieveRelevantMemories, extractTaskMemories } from '../memory/hooks';
 
@@ -96,6 +97,7 @@ export const companionAgent = new Agent({
     planner: plannerAgent,
     github: githubAgent,
     outline: outlineAgent,
+    plane: planeAgent,
   },
 });
 

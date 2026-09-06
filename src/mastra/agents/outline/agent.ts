@@ -20,6 +20,5 @@ export const outlineAgent = new Agent({
       generateTitle: false,
     },
   }),
-  maxSteps: 30,
   tools: mcpTools as Record<string, any>,
 });
