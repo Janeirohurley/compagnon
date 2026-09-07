@@ -11,10 +11,17 @@ import {
 import { agent } from "./agents/companion/agent";
 import { plannerAgent } from "./agents/planner";
 import { planeAgent } from "./agents/plane";
-import { planeTools } from "./plane";
+import { outlineAgent } from "./agents/outline";
+import { notionAgent } from "./agents/notion";
+import { githubAgent } from "./agents/github";
+import { memoryAgent } from "./agents/memory";
+import { researchAgent } from "./agents/research";
 
 import { startScheduleTool, stopScheduleTool } from "./tools/schedule-tools";
 import { memoryWorkflowTool } from "./tools/memory-workflow-tool";
+import { planExecutorTool } from "./tools/plan-executor-tool";
+import { requestPlanTool } from "./tools/request-plan-tool";
+import { researchRequestTool } from "./tools/research-request-tool";
 import { MastraEditor } from "@mastra/editor";
 import { chatRoute } from "@mastra/ai-sdk";
 import { connectionsRoutes } from "./routes/connections-routes";
@@ -22,9 +29,10 @@ import { memoryRoutes } from "./routes/memory-routes";
 import { plannerRoutes } from "./routes/planner-routes";
 import { githubRoutes } from "./routes/github-routes";
 import { outlineRoutes } from "./routes/outline-routes";
+import { notionRoutes } from "./routes/notion-routes";
+import { researchRoutes } from "./routes/research-routes";
 import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
-import { planeContextWorkflow } from "./workflows/plane-context-workflow";
-import { planeContextWorkflowTool } from "./tools/plane-context-workflow-tool";
+import { planExecutorWorkflow } from "./workflows/plan-executor-workflow";
 
 // const originalFetch = globalThis.fetch;
 // globalThis.fetch = async (input, init) => {
@@ -38,9 +46,9 @@ import { planeContextWorkflowTool } from "./tools/plane-context-workflow-tool";
 // };
 
 export const mastra = new Mastra({
-  agents: { agent, planner: plannerAgent, plane: planeAgent },
-  tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool, plane_context_workflow: planeContextWorkflowTool, ...planeTools },
-  workflows: { agentMemoryWorkflow, planeContextWorkflow },
+  agents: { agent, planner: plannerAgent, plane: planeAgent, outline: outlineAgent, notion: notionAgent, github: githubAgent, memory: memoryAgent, research: researchAgent },
+  tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool, planExecutorTool, requestPlanTool, researchRequestTool },
+  workflows: { agentMemoryWorkflow, planExecutorWorkflow },
   storage: new MastraCompositeStore({
     id: "composite-storage",
     default: new LibSQLStore({
@@ -72,11 +80,17 @@ export const mastra = new Mastra({
         path: "/chat/plane",
         agent: "plane",
       }),
+      chatRoute({
+        path: "/chat/notion",
+        agent: "notion",
+      }),
       ...connectionsRoutes,
       ...memoryRoutes,
       ...plannerRoutes,
       ...githubRoutes,
       ...outlineRoutes,
+      ...notionRoutes,
+      ...researchRoutes,
     ],
   },
 });

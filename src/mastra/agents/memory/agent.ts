@@ -79,6 +79,20 @@ You work with 4 types:
 
 Use the most specific scope appropriate.
 
+## Preferences
+
+Compagnon records durable user choices as **preferences**:
+- subject: the preference key (e.g. "documentation-backend")
+- predicate: "prefers"
+- value: the chosen value (e.g. "outline" | "notion")
+- scope: global
+- confidence: 0.95
+
+Store preferences as semantic memories. When a preference value changes,
+mark the previous one as superseded rather than keeping duplicates.
+Always retrieve the active preference (status "active", predicate "prefers")
+when asked for a user's preferred tool or backend.
+
 ## Confidence
 
 Assign evidence-based confidence:

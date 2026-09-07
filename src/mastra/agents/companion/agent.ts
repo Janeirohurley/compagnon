@@ -5,19 +5,24 @@ import { Memory } from '@mastra/memory';
 import { companionInstructions } from '../../instructions/companion-instructions';
 import { getCompanionModelConfig } from '../../config/model-config';
 import { getCompanionTools } from '../../tools';
-import { getCompanionMcpTools } from '../../mcp';
+import { getMcpToolsForAgent } from '../../mcp';
+import { requestPlanTool } from '../../tools/request-plan-tool';
+import { planExecutorTool } from '../../tools/plan-executor-tool';
+import { researchRequestTool } from '../../tools/research-request-tool';
 import { memoryAgent } from '../memory';
 import { plannerAgent } from '../planner';
 import { githubAgent } from '../github';
 import { outlineAgent } from '../outline';
+import { notionAgent } from '../notion';
 import { planeAgent } from '../plane';
+import { researchAgent } from '../research';
 import { buildMemoryDelegationPrompt, parseMemoryTaskResult, type MemoryTask } from '../memory/delegation';
 import { retrieveRelevantMemories, extractTaskMemories } from '../memory/hooks';
 
 const model = getCompanionModelConfig();
 
 const nativeTools = getCompanionTools();
-const mcpTools = await getCompanionMcpTools();
+const mcpTools = await getMcpToolsForAgent('companion');
 
 // Memory hooks wrapper - optional middleware
 // async function executeWithMemory(
@@ -88,6 +93,9 @@ export const companionAgent = new Agent({
 
   tools: {
     ...nativeTools,
+    request_plan: requestPlanTool,
+    plan_executor: planExecutorTool,
+    research_request: researchRequestTool,
     ...mcpTools,
   },
 
@@ -97,7 +105,9 @@ export const companionAgent = new Agent({
     planner: plannerAgent,
     github: githubAgent,
     outline: outlineAgent,
+    notion: notionAgent,
     plane: planeAgent,
+    research: researchAgent,
   },
 });
 

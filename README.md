@@ -47,11 +47,58 @@ Configure your API keys in `.env`.
 pnpm dev
 ```
 
+## MCP Server Configuration
+
+MCP servers are declared declaratively in `mcp.servers.json` (no code changes required to add or remove them).
+
+| Field | Role |
+|-------|------|
+| `enabled` | `true`/`false` — activates or disables the server |
+| `agents` | Which agents load this server's tools (`companion`, `github`, `outline`, …) |
+| `type` | `stdio` (subprocess) or `url` (remote HTTP) |
+| `command` / `args` | Stdio transport command and arguments |
+| `url` / `headers` | HTTP transport endpoint and request headers |
+| `requiredEnv` | Env vars that must be set, otherwise the server is skipped |
+| `optionalArgs` | Arguments added only when a given env var is set |
+
+Secrets and values never belong in the JSON: use `{{VAR}}` placeholders, interpolated from the environment at startup. A default can be inlined: `{{COMPANION_WORKSPACE_ROOTS:/home/projets/ai/compagnon}}`. In `args`, a standalone `{{VAR}}` whose value contains commas is expanded into multiple arguments.
+
+Example — disable GitHub without touching the code:
+
+```json
+{ "id": "github", "enabled": false }
+```
+
+The registry location can be overridden with `COMPANION_MCP_CONFIG`.
+
+## Notion Agent
+
+The `notion` specialist agent documents knowledge, notes, decisions and procedures in
+Notion. It is delegated by the companion and never operates directly on the tools.
+
+The Notion server is declared in `mcp.servers.json` as a remote HTTP server
+(`https://mcp.notion.com/mcp`) using the **Notion MCP (OAuth)** — no static token
+is needed. On first use, run the interactive OAuth flow (the agent's `notion_connect`
+tool, or `connectOAuthServer("notion")`); tokens are persisted to
+`~/.compagnon/oauth/<serverId>.json` so later boots load the tools automatically.
+
+If Notion is not yet authorized, the server is skipped at boot (non-blocking) and the
+agent degrades to just the `notion_connect` setup tool until connected.
+
+Which documentation backend the companion prefers (Outline vs Notion) is memoized as a
+memory `preference` (`subject="documentation-backend"`), so delegation routes consistently
+without re-asking; say "use Notion" (or "use Outline") at any time to switch, which
+supersedes the stored preference and future routing follows it.
+
+Optional override: set `NOTION_OAUTH_REDIRECT_URL` in `.env` to change the OAuth callback
+(default `http://127.0.0.1:5533/oauth/callback`).
+
 ## Project Structure
 
 ```
 .
 ├── .agents/skills/     # Skill definitions
+├── mcp.servers.json    # Declarative MCP server registry
 ├── src/mastra/         # Agent configuration
 ├── CHANGELOG.md        # Change history
 └── README.md           # This file

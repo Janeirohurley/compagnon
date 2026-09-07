@@ -1,0 +1,106 @@
+{
+  "$comment": "Registre déclaratif des serveurs MCP. Active/désactive un serveur avec 'enabled'. Chaque serveur est chargé dans les agents listés dans 'agents'. Les placeholders {{VAR}} (ou {{VAR:default}}) sont interpolés depuis les variables d'environnement.",
+  "global": {
+    "timeout": 60000,
+    "connectRetries": 3,
+    "retryDelayMs": 1000
+  },
+  "servers": [
+    {
+      "id": "filesystem",
+      "enabled": true,
+      "agents": ["companion"],
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "{{COMPANION_WORKSPACE_ROOTS:/home/projets/ai/compagnon}}"]
+    },
+    {
+      "id": "git",
+      "enabled": true,
+      "agents": ["companion"],
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--with", "mcp<2", "mcp-server-git", "--repository", "{{COMPANION_GIT_REPOSITORY}}"],
+      "requiredEnv": ["COMPANION_GIT_REPOSITORY"]
+    },
+    {
+      "id": "ssh",
+      "enabled": true,
+      "agents": ["companion"],
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "ssh-mcp"],
+      "optionalArgs": [
+        {
+          "whenEnv": "COMPANION_SSH_CONFIG",
+          "args": ["--config={{COMPANION_SSH_CONFIG}}"]
+        }
+      ]
+    },
+    {
+      "id": "github",
+      "enabled": true,
+      "agents": ["github", "research"],
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{{GITHUB_TOKEN}}"
+      },
+      "requiredEnv": ["GITHUB_TOKEN"]
+    },
+    {
+      "id": "web-search",
+      "enabled": true,
+      "agents": ["research"],
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "{{BRAVE_API_KEY}}"
+      },
+      "requiredEnv": ["BRAVE_API_KEY"]
+    },
+    {
+      "id": "outline",
+      "enabled": true,
+      "agents": ["outline"],
+      "type": "url",
+      "url": "{{OUTLINE_BASE_URL}}/mcp",
+      "headers": {
+        "Authorization": "Bearer {{OUTLINE_API_KEY}}"
+      },
+      "requiredEnv": ["OUTLINE_BASE_URL", "OUTLINE_API_KEY"]
+    },
+    {
+      "id": "plane",
+      "enabled": true,
+      "agents": ["plane"],
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.plane.so/http/api-key/mcp",
+        "--header",
+        "Authorization: Bearer {{PLANE_API_KEY}}",
+        "--header",
+        "x-workspace-slug: {{PLANE_WORKSPACE_SLUG}}"
+      ],
+      "requiredEnv": ["PLANE_API_KEY", "PLANE_WORKSPACE_SLUG"]
+    },
+    {
+      "id": "notion",
+      "enabled": true,
+      "agents": ["notion"],
+      "type": "url",
+      "url": "https://mcp.notion.com/mcp",
+      "auth": {
+        "provider": "mcp",
+        "redirectUrl": "{{NOTION_OAUTH_REDIRECT_URL:http://127.0.0.1:5533/oauth/callback}}",
+        "clientName": "Compagnon MCP Client"
+      },
+      "allowedHosts": ["mcp.notion.com"]
+    }
+  ]
+}

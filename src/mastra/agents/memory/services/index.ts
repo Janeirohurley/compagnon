@@ -14,3 +14,4 @@ export * from "./consolidation";
 export * from "./decisions";
 export * from "./episodes";
 export * from "./procedures-list";
+export * from "./preferences";

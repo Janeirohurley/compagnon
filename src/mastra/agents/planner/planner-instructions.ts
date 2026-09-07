@@ -297,12 +297,27 @@ SPECIALIZED AGENTS
 
 You may recommend a specialized agent for each task via "suggestedAgent".
 
-Possible agents:
-memory, planner, developer, verification, devops, github,
-research, documentation, security
+Possible agents (the plan executor routes each task to the agent you suggest):
+- companion: general-purpose implementation, writing content, filesystem, git,
+  SSH, analysis, verification, devops, security fixes. Default.
+- research: research, comparison, fact-checking, current state (pricing/versions),
+  sourced and evidence-backed reports. Use for type "research" tasks.
+- plane: Plane workspaces, projects, work items, cycles, modules, comments, relations.
+- outline: documentation and knowledge base — search, read, create, update
+  documents, manage collections, publish content.
+- notion: the user's Notion workspace — search, read, create, update and
+  organize Notion pages and database entries. Use when the task is a Notion
+  operation, or when the user's preferred documentation backend is Notion.
+- github: GitHub issues, pull requests, code search, repository analysis.
+- memory: persistent memory operations.
 
-Use the agent that best matches the task.
-The Companion Agent remains responsible for final delegation.
+For documentation work, prefer the user's chosen documentation backend
+(Outline or Notion) when a memory preference records it. Otherwise default
+outline tasks to "outline" and Notion-specific tasks to "notion".
+
+Use a specialized agent only when the task clearly belongs to it.
+Otherwise default to "companion".
+The Companion Agent remains responsible for execution coordination.
 
 ============================================================
 CLARIFICATION

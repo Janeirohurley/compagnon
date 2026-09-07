@@ -8,7 +8,7 @@
     "dev": "mastra dev",
     "build": "mastra build",
     "start": "mastra start",
-    "test": "vitest run src/mastra/plane/tests/*.test.ts"
+    "test": "vitest run src/mastra/plane/tests src/mastra/agents/notion/tests src/mastra/agents/memory/services/preferences.test.ts src/mastra/agents/research/tests"
   },
   "keywords": [],
   "author": "",
@@ -18,19 +18,19 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "^3.0.30",
-    "@ai-sdk/react": "^4.0.61",
+    "@ai-sdk/openai-compatible": "3.0.30",
+    "@ai-sdk/react": "4.0.61",
     "@libsql/client": "0.17.4",
-    "@mastra/ai-sdk": "^1.8.0",
+    "@mastra/ai-sdk": "1.8.0",
     "@mastra/core": "1.59.0",
     "@mastra/duckdb": "1.6.1",
-    "@mastra/editor": "^0.13.13",
+    "@mastra/editor": "0.13.13",
     "@mastra/libsql": "1.20.0",
-    "@mastra/mcp": "^1.16.0",
+    "@mastra/mcp": "1.16.0",
     "@mastra/memory": "1.26.2",
     "@mastra/observability": "1.17.0",
     "ai": "^7.0.58",
-    "zod": "^4.4.3"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "latest",

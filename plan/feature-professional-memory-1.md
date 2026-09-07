@@ -4,13 +4,17 @@ version: 1.0
 date_created: 2026-08-22
 last_updated: 2026-08-22
 owner: Compagnon
-status: 'Planned'
+status: 'Deprecated'
 tags: ['architecture', 'feature', 'memory', 'companion']
 ---
 
 # Mémoire Professionnelle — Agent Compagnon de Développement
 
-![Status: Planned](https://img.shields.io/badge/status-Planned-blue)
+![Status: Deprecated](https://img.shields.io/badge/status-Deprecated-red)
+
+> **⚠️ DEPRECATED** — Remplacé par `plan/refactor-memory-mastra-unification-1.md`.
+> Ce plan proposait d'**étendre** le sous-système mémoire custom (snapshots/trends/recap/profil sur Turso).
+> La décision retenue est l'inverse : **abandonner le sous-système custom et unifier tout sur Mastra Memory natif** (LibSQL + vector + semantic recall + working memory + observational memory). Ne pas implémenter ce plan.
 
 ## Introduction
 

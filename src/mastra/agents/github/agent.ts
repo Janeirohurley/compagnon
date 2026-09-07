@@ -5,11 +5,11 @@ import { z } from "zod";
 
 import { companionModel } from "../../providers/omniroute";
 import { githubInstructions } from "./github-instructions";
-import { getGithubMcpTools } from "../../mcp/github-tools";
+import { getMcpToolsForAgent } from "../../mcp";
 import { getAuthenticatedUser, listUserRepositories } from "./tools/user-info";
 
 // Load MCP GitHub tools at startup
-const mcpTools = await getGithubMcpTools();
+const mcpTools = await getMcpToolsForAgent("github");
 
 // Tool: get the authenticated user's profile
 const getMyProfileTool = createTool({

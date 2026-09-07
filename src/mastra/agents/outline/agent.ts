@@ -3,10 +3,10 @@ import { Memory } from "@mastra/memory";
 
 import { companionModel } from "../../providers/omniroute";
 import { outlineInstructions } from "./outline-instructions";
-import { getOutlineMcpTools } from "../../mcp/outline-tools";
+import { getMcpToolsForAgent } from "../../mcp";
 
 // Load MCP Outline tools at startup
-const mcpTools = await getOutlineMcpTools();
+const mcpTools = await getMcpToolsForAgent("outline");
 
 export const outlineAgent = new Agent({
   id: "outline",
