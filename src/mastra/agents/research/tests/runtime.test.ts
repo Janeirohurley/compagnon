@@ -66,9 +66,15 @@ function makeSynthesis(overrides: Partial<Record<string, unknown>> = {}) {
 
 function fakeAgent(
   handler: (prompt: string) => { object?: unknown; text?: string },
+  delayMs = 0,
 ): ResearchAgentLike {
   return {
-    generate: async (prompt: string) => handler(prompt),
+    generate: async (prompt: string) => {
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+      return handler(prompt);
+    },
   };
 }
 
@@ -77,6 +83,7 @@ function phasedFake(opts: {
   pass?: (prompt: string, passNumber: number) => { object?: unknown };
   synthesis?: unknown;
   calls?: { passes: number };
+  delayMs?: number;
 }) {
   let passCount = 0;
   return fakeAgent((prompt) => {
@@ -89,7 +96,7 @@ function phasedFake(opts: {
     passCount += 1;
     if (opts.calls) opts.calls.passes = passCount;
     return opts.pass ? opts.pass(prompt, passCount) : { object: makePass() };
-  });
+  }, opts.delayMs ?? 0);
 }
 
 describe("runResearch", () => {
@@ -212,7 +219,10 @@ describe("runResearch", () => {
   });
 
   it("stops with TIME_EXPIRED when the runtime budget is exceeded", async () => {
-    const agent = phasedFake({ synthesis: makeSynthesis({ insufficientEvidence: true }) });
+    // Artificial per-call latency makes the 1ms budget trip deterministically
+    // instead of racing with a synchronous fake (fast machines used to complete
+    // the whole run before the first budget check).
+    const agent = phasedFake({ synthesis: makeSynthesis({ insufficientEvidence: true }), delayMs: 5 });
     const result = await runResearch(agent, request, { maxRuntimeMs: 1 });
 
     expect(result.limits.stoppedReason).toBe(ResearchStopReason.TIME_EXPIRED);
