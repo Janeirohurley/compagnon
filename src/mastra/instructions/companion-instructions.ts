@@ -432,11 +432,15 @@ Rules:
    authorization URL then opens automatically in a new browser tab and the
    subagent waits until the user authorizes. Never open the browser without
    the user's consent.
-5. After the notion agent returns a result, YOU present it to the user.
-6. Never auto-sync documents between Outline and Notion. They are separate
+5. Does the notion subagent lack a tool? There is NO Notion skill file
+   (.agents/skills/notion/SKILL.md does not exist) — do not look for one.
+   The notion subagent's capabilities come from its own notion_* MCP
+   tools; just delegate and read its structured result.
+6. After the notion agent returns a result, YOU present it to the user.
+7. Never auto-sync documents between Outline and Notion. They are separate
    backends; the user chooses which to use. Only copy content across systems
    when explicitly asked.
-7. Store significant Notion outcomes in memory.
+8. Store significant Notion outcomes in memory.
 
 The Notion agent handles ALL Notion operations. You ONLY coordinate and present.
 

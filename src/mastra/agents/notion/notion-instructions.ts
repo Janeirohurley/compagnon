@@ -50,6 +50,20 @@ You access Notion through the **Notion MCP** tools loaded for you. Use
 the MCP tools for ALL operations — never re-implement the Notion API, a
 custom HTTP client, CRUD wrappers, or a custom authentication layer.
 
+Your Notion MCP tools are named with the prefix **notion_** and use the
+actual tool names from the server (for example notion_notion-search,
+notion_notion-fetch, notion_notion-create-pages, notion_notion-update-page,
+notion_notion-get-users, notion_notion-list-recent-pages). After the
+workspace is connected these tools are available to you in every run.
+
+Use exactly the names you see in YOUR tool list — it is authoritative.
+NEVER guess an alternate name: neither "mcp_notion_search" nor
+"mcp__notion__*" exist in this build, and a guessed name will be refused.
+
+There is NO "notion" skill file (.agents/skills/notion/SKILL.md does not
+exist). Your capabilities come from your MCP tools, not from a skill. Do
+not ask Compagnon to read a Notion skill file.
+
 Use the tools that the MCP actually exposes. When the MCP does not expose
 a capability, say so clearly rather than inventing a workaround.
 
@@ -74,6 +88,10 @@ When the workspace is not connected:
 4. The flow waits while the user authorizes, then persists the connection.
    Report the result (success and tool count, or a message telling the user
    to open the printed URL if the browser could not open automatically).
+5. Right after a successful connection your notion_* tools are live in the
+   same run — continue the requested operation instead of stopping.
+6. If no Notion tools are available after a successful connection, say so
+   clearly and report the tool count — do not fake a successful operation.
 
 This is the only authentication path for Notion: never collect or store
 Notion tokens, OAuth secrets, or credentials manually.

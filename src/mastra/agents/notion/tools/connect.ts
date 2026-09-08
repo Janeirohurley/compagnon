@@ -2,6 +2,7 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 
 import { connectOAuthServer, hasValidOAuthTokens } from '../../../mcp';
+import { seedNotionMcpTools } from '../mcp-tools';
 
 /**
  * Establishes the OAuth connection to the Notion MCP server on demand.
@@ -33,6 +34,10 @@ export const notionConnectTool = createTool({
 
     const tools = await connectOAuthServer('notion');
     const toolCount = Object.keys(tools).length;
+
+    // Seed the agent's dynamic tool cache so the Notion MCP tools become
+    // available immediately, without waiting for a server restart.
+    seedNotionMcpTools(tools);
 
     return {
       connected: toolCount > 0,

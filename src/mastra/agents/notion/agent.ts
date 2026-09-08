@@ -3,14 +3,13 @@ import { Memory } from "@mastra/memory";
 
 import { companionModel } from "../../providers/omniroute";
 import { notionInstructions } from "./notion-instructions";
-import { getMcpToolsForAgent } from "../../mcp";
+import { getNotionMcpTools } from "./mcp-tools";
 import { notionConnectTool } from "./tools";
 
-// Load MCP Notion tools at startup. OAuth servers only expose tools once the
-// workspace has been connected (see the notion_connect tool); until then this
-// is empty and the agent reports NOTION_NOT_CONNECTED.
-const mcpTools = await getMcpToolsForAgent("notion");
-
+// The tools are a DynamicArgument function so they are re-resolved on every
+// agent run. Before the workspace is authorized this resolves to notion_connect
+// only (NOTION_NOT_CONNECTED); right after authorization it grows to the full
+// Notion MCP tool set without needing a server restart.
 export const notionAgent = new Agent({
   id: "notion",
   name: "Notion Agent",
@@ -23,8 +22,14 @@ export const notionAgent = new Agent({
       generateTitle: false,
     },
   }),
-  tools: {
+  tools: async () => ({
     notion_connect: notionConnectTool,
-    ...mcpTools,
-  } as Record<string, any>,
+    ...(await getNotionMcpTools()),
+  }) as Record<string, any>,
 });
+
+// Warm the MCP tool cache in the background when the workspace is already
+// authorized, so the first Notion request does not pay the connection cost.
+// Best-effort: when there are no valid tokens it returns an empty set and
+// connects nothing, so this never fails or blocks the boot.
+void getNotionMcpTools().catch(() => undefined);
