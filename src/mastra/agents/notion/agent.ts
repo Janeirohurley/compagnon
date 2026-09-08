@@ -4,7 +4,7 @@ import { Memory } from "@mastra/memory";
 import { companionModel } from "../../providers/omniroute";
 import { notionInstructions } from "./notion-instructions";
 import { getNotionMcpTools } from "./mcp-tools";
-import { notionConnectTool } from "./tools";
+import { notionConnectTool, notionDisconnectTool } from "./tools";
 
 // The tools are a DynamicArgument function so they are re-resolved on every
 // agent run. Before the workspace is authorized this resolves to notion_connect
@@ -24,6 +24,7 @@ export const notionAgent = new Agent({
   }),
   tools: async () => ({
     notion_connect: notionConnectTool,
+    notion_disconnect: notionDisconnectTool,
     ...(await getNotionMcpTools()),
   }) as Record<string, any>,
 });

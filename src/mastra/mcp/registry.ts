@@ -329,6 +329,39 @@ export async function hasValidOAuthTokens(serverId: string): Promise<boolean> {
   }
 }
 
+/**
+ * Revoke a server's OAuth authorization: clears the persisted tokens, client
+ * info and code verifier from the file-backed store, so the tools stop loading
+ * on the next resolution and the server must be authorized again to be used.
+ * Server-side revocation (removing the integration on the provider's side)
+ * stays the user's action where the provider requires it (e.g. Notion).
+ */
+export async function disconnectOAuthServer(serverId: string): Promise<boolean> {
+  const config = loadMcpServersConfig();
+  const server = config.servers.find((s) => s.id === serverId);
+
+  if (!server) {
+    return false;
+  }
+
+  const provider = buildOAuthProvider(server);
+
+  if (!provider) {
+    return false;
+  }
+
+  try {
+    await provider.clear();
+    return true;
+  } catch (error) {
+    console.warn(
+      `[Compagnon] MCP "${serverId}": could not clear OAuth tokens:`,
+      error instanceof Error ? error.message : error,
+    );
+    return false;
+  }
+}
+
 export async function getMcpToolsForAgent(agentId: string): Promise<Record<string, unknown>> {
   const config = loadMcpServersConfig();
 

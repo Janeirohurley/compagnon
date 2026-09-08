@@ -44,3 +44,12 @@ export function seedNotionMcpTools(tools: Record<string, unknown>): void {
   cache = tools;
   loading = null;
 }
+
+/**
+ * Drop the memoized tool map. Used after disconnecting so Notion tools stop
+ * being offered to the agent on subsequent resolutions.
+ */
+export function resetNotionMcpTools(): void {
+  cache = null;
+  loading = null;
+}

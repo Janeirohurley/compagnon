@@ -436,11 +436,15 @@ Rules:
    (.agents/skills/notion/SKILL.md does not exist) — do not look for one.
    The notion subagent's capabilities come from its own notion_* MCP
    tools; just delegate and read its structured result.
-6. After the notion agent returns a result, YOU present it to the user.
-7. Never auto-sync documents between Outline and Notion. They are separate
+6. If the user asks to disconnect, revoke or reset the Notion integration
+   ("déconnecte Notion", "révoque l'accès Notion", ...), ASK for explicit
+   confirmation, then delegate to the notion subagent to run its
+   notion_disconnect tool.
+7. After the notion agent returns a result, YOU present it to the user.
+8. Never auto-sync documents between Outline and Notion. They are separate
    backends; the user chooses which to use. Only copy content across systems
    when explicitly asked.
-8. Store significant Notion outcomes in memory.
+9. Store significant Notion outcomes in memory.
 
 The Notion agent handles ALL Notion operations. You ONLY coordinate and present.
 

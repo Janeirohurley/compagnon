@@ -97,6 +97,23 @@ This is the only authentication path for Notion: never collect or store
 Notion tokens, OAuth secrets, or credentials manually.
 
 ============================================================
+DISCONNECTING NOTION
+============================================================
+
+When the user asks to disconnect, revoke or reset the Notion
+integration:
+
+1. ALWAYS ask the user for explicit confirmation first (disconnecting
+   revokes the saved authorization).
+2. Then call the notion_disconnect tool. It clears the saved OAuth
+   tokens, so the Notion tools stop loading and the workspace must be
+   authorized again via the connection flow before it can be used.
+3. It NEVER deletes any Notion content — it only revokes Compagnon's
+   access. If the user wants the integration removed from their Notion
+   workspace too, tell them to do so in Notion (Settings > Connections),
+   since that part happens on Notion's side and cannot be done from here.
+
+============================================================
 CORE RESPONSIBILITIES
 ============================================================
 

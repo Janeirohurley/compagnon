@@ -10,6 +10,7 @@ process.env.OMNIROUTE_MODEL = 'gpt-4o-mini';
 // hermetically. Real end-to-end operations (search/read/create against a real
 // workspace) remain an integration test that needs a connected workspace.
 const connectOAuthServer = vi.fn();
+const disconnectOAuthServer = vi.fn(async () => true);
 const getMcpToolsForAgent = vi.fn(async () => ({}));
 const hasValidOAuthTokens = vi.fn(async () => false);
 
@@ -21,10 +22,12 @@ vi.mock('node:fs', async (importOriginal) => {
 vi.mock('../../../mcp', () => ({
   getMcpToolsForAgent,
   connectOAuthServer,
+  disconnectOAuthServer,
   hasValidOAuthTokens,
 }));
 
 let notionConnectTool: any;
+let notionDisconnectTool: any;
 let getNotionConfig: (() => ReturnType<typeof import('../config')['getNotionConfig']>) | undefined;
 let requireNotionConfig: (() => void) | undefined;
 let notionInstructions: string;
@@ -37,6 +40,7 @@ let existsSync: Mock;
 describe('Notion Agent integration with Compagnon', () => {
   beforeAll(async () => {
     ({ notionConnectTool } = await import('../tools/connect'));
+    ({ notionDisconnectTool } = await import('../tools/disconnect'));
     const config = await import('../config');
     getNotionConfig = config.getNotionConfig;
     requireNotionConfig = config.requireNotionConfig;
@@ -53,6 +57,8 @@ describe('Notion Agent integration with Compagnon', () => {
 
   beforeEach(() => {
     connectOAuthServer.mockReset();
+    disconnectOAuthServer.mockReset();
+    disconnectOAuthServer.mockResolvedValue(true);
     hasValidOAuthTokens.mockReset();
     hasValidOAuthTokens.mockResolvedValue(false);
   });
@@ -85,6 +91,21 @@ describe('Notion Agent integration with Compagnon', () => {
     expect(out.connected).toBe(false);
     expect(out.toolCount).toBe(0);
     expect(out.message).toContain('no tools were returned');
+  });
+
+  it('does nothing when disconnecting an already-disconnected workspace', async () => {
+    const out = await notionDisconnectTool.execute({});
+    expect(disconnectOAuthServer).not.toHaveBeenCalled();
+    expect(out.disconnected).toBe(false);
+    expect(out.message).toContain('not connected');
+  });
+
+  it('revokes OAuth tokens via the MCP layer when disconnecting', async () => {
+    hasValidOAuthTokens.mockResolvedValue(true);
+    const out = await notionDisconnectTool.execute({});
+    expect(disconnectOAuthServer).toHaveBeenCalledWith('notion');
+    expect(out.disconnected).toBe(true);
+    expect(out.message).toContain('disconnected');
   });
 
   it('requires a connected workspace before using Notion tools', () => {
