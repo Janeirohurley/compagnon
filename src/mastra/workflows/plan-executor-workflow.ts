@@ -5,7 +5,14 @@ import { planeAgent } from "../agents/plane";
 import { outlineAgent } from "../agents/outline";
 import { notionAgent } from "../agents/notion";
 import { githubAgent } from "../agents/github";
-import { memoryAgent } from "../agents/memory";
+import {
+  memoryAgent,
+  buildMemoryDelegationPrompt,
+  parseMemoryTaskResult,
+  type MemoryTask,
+  type MemoryTaskResult,
+  type MemoryOperation,
+} from "../agents/memory";
 import { researchAgent, runResearch, formatResearchSummary } from "../agents/research";
 import type { ResearchResult } from "../agents/research/domain/types";
 import { executionPlanSchema } from "../agents/planner/domain/schemas";
@@ -211,7 +218,7 @@ ACCEPTANCE CRITERIA (you MUST satisfy all of them):
 ${acceptanceList}
 
 EXECUTE the task now using ONLY the tools strictly necessary for this specific task (for example, read a file, run a search, write to a specific location).
-Do NOT use memory_search, memory_remember, memory_update, memory_forget, memory_hooks, memory_record_episode, memory_record_decision, or any memory tool.
+Do NOT use memory_hooks or any memory tool — memory work is delegated through the plan's assigned agent.
 Do NOT delegate to any subagent.
 Do NOT call plan_executor, request_plan, memory_workflow, or any planning/delegation tool.
 Do NOT ask for confirmation.
@@ -438,6 +445,92 @@ export function mapResearchResultToReport(
 }
 
 // ---------------------------------------------------------------------------
+// Memory task execution
+// ---------------------------------------------------------------------------
+
+// Heuristic routing for memory delegation. Defaults to "store": any memory
+// task that is not an obvious forget or find is treated as persistence work.
+const FORGET_HINTS = /forget|oubli|efface|delete|supprime|retire|remove/i;
+const FIND_HINTS =
+  /find|cherch|retrouv|recherch|query|list|liste|lister|verify|vérif|show|rappelle|recall|look.?up/i;
+
+/**
+ * Infers the native memory operation from a task's wording. Pure and exported
+ * for testing (find/store/forget are the only operations on the unified memory).
+ */
+export function inferMemoryOperation(text: string): MemoryOperation {
+  if (FORGET_HINTS.test(text)) return "forget";
+  if (FIND_HINTS.test(text)) return "find";
+  return "store";
+}
+
+/**
+ * Executes a memory task through the Memory Agent's delegated tools
+ * (memory_find/store/forget) instead of the generic executor JSON contract.
+ * The memory agent answers in a strict STATUS/SUMMARY format; parseMemoryTaskResult
+ * reads it without free JSON, then the result is mapped onto the executor contract.
+ */
+export async function runMemoryTask(
+  task: ExecutionPlan["tasks"][number],
+  plan: ExecutionPlan,
+): Promise<
+  | { ok: true; output: string; acceptance: AcceptanceResult[] }
+  | { ok: false; error: string }
+> {
+  const objective = [task.title, task.description].filter(Boolean).join(" — ");
+
+  const memoryTask: MemoryTask = {
+    taskId: task.id,
+    operation: inferMemoryOperation(objective),
+    objective,
+    scope: { task: plan.objective },
+    context: { objective: plan.objective, summary: plan.summary },
+    expectedOutput: task.expectedOutputs.join("; ") || undefined,
+  };
+
+  try {
+    const response = await memoryAgent.generate(buildMemoryDelegationPrompt(memoryTask));
+    const text = extractTextFromResponse(response);
+    const memoryResult = parseMemoryTaskResult(text);
+    return mapMemoryResultToReport(memoryResult, task);
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Memory task execution failed.",
+    };
+  }
+}
+
+/**
+ * Maps a MemoryTaskResult onto the executor's report contract. Pure and
+ * exported for testing. success/partial satisfy the acceptance criteria;
+ * failed/blocked produce a failed task with the agent's summary as reason.
+ */
+export function mapMemoryResultToReport(
+  result: MemoryTaskResult,
+  task: ExecutionPlan["tasks"][number],
+):
+  | { ok: true; output: string; acceptance: AcceptanceResult[] }
+  | { ok: false; error: string } {
+  if (result.status === "success" || result.status === "partial") {
+    const output = `Memory ${result.status}: ${result.summary}`;
+    const acceptance: AcceptanceResult[] = task.acceptanceCriteria.map(
+      (criterion) => ({
+        criterion,
+        met: true,
+        evidence: `Memory ${result.status}: ${result.summary.slice(0, 500)}`,
+      }),
+    );
+    return { ok: true, output, acceptance };
+  }
+
+  return {
+    ok: false,
+    error: result.summary ?? `Memory task ended with status ${result.status}.`,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Step 1 - prepare
 // ---------------------------------------------------------------------------
 
@@ -526,6 +619,8 @@ const executeStep = createStep({
 
         if (agentId === "research") {
           agentResult = await runResearchTask(task, plan);
+        } else if (agentId === "memory") {
+          agentResult = await runMemoryTask(task, plan);
         } else {
           const agent = await getAgent();
           const prompt = buildTaskPrompt(plan, task);

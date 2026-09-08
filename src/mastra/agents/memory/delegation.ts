@@ -1,11 +1,13 @@
-// Delegation contract between Main Agent and Memory Agent
-import { retrieveRelevantMemories, extractTaskMemories, extractFactsFromText, executeWithMemoryHooks, executeMemoryTask } from "./hooks";
-
-export type MemoryOperation = 
+// Delegation contract between the Main Agent / plan executor and the Memory Agent.
+// The Memory Agent is instructed to use its native tools (memory_find/store/forget)
+// and to answer in a strict two-line format (STATUS + SUMMARY). No free-form JSON.
+export type MemoryOperation =
+  | "find"
+  | "store"
+  | "forget"
   | "retrieve"
   | "remember"
   | "update"
-  | "forget"
   | "record_episode"
   | "record_decision"
   | "get_procedure"
@@ -41,13 +43,37 @@ export interface MemoryTaskResult {
   confidence: number;
 }
 
-// Build delegation prompt for the Memory Agent
+type NativeOperation = "find" | "store" | "forget";
+
+const OPERATION_TO_NATIVE: Record<MemoryOperation, NativeOperation> = {
+  find: "find",
+  retrieve: "find",
+  get_procedure: "find",
+  verify: "find",
+  store: "store",
+  remember: "store",
+  update: "store",
+  record_episode: "store",
+  record_decision: "store",
+  extract: "store",
+  consolidate: "store",
+  forget: "forget",
+};
+
+const NATIVE_TASK_NOTES: Record<NativeOperation, string> = {
+  find: "Search relevant context and report what is actually found.",
+  store: "Persist the durable information into the appropriate labeled block.",
+  forget: "Remove the requested memory (whole labeled block or a keyed line).",
+};
+
+// Build delegation prompt for the Memory Agent (typed tool + strict answer format)
 export function buildMemoryDelegationPrompt(task: MemoryTask): string {
   const { operation, objective, scope, context } = task;
+  const native = OPERATION_TO_NATIVE[operation] ?? "store";
 
   let prompt = `Memory Task #${task.taskId}\n`;
-  prompt += `Operation: ${operation}\n`;
   prompt += `Objective: ${objective}\n`;
+  prompt += `Operation: memory_${native}\n`;
 
   if (scope) {
     prompt += `\nScope:\n`;
@@ -57,47 +83,45 @@ export function buildMemoryDelegationPrompt(task: MemoryTask): string {
   }
 
   if (context) {
-    prompt += `\nContext:\n${JSON.stringify(context, null, 2)}\n`;
+    prompt += `\nContext:\n${JSON.stringify(context)}\n`;
   }
 
-  prompt += `\nExecute this memory operation and return the result in this format:\n`;
-  prompt += `{
-  "status": "success" | "partial" | "failed" | "blocked",
-  "memories": [...],
-  "conflicts": [...],
-  "summary": "brief description of what was done",
-  "confidence": 0.0-1.0,
-  "warnings": ["any warnings"]
-}`;
+  if (task.expectedOutput) {
+    prompt += `\nExpected output: ${task.expectedOutput}\n`;
+  }
+
+  prompt += `\n${NATIVE_TASK_NOTES[native]}\n`;
+  prompt += `\nRespond with EXACTLY two lines and nothing else (no JSON, no fences):\n`;
+  prompt += `STATUS: success | partial | failed | blocked\n`;
+  prompt += `SUMMARY: <one concise line describing what was done / found>`;
 
   return prompt;
 }
 
-// Parse Memory Agent response
+// Parse the memory agent's strict STATUS/SUMMARY answer - never JSON.
 export function parseMemoryTaskResult(response: string): MemoryTaskResult {
-  try {
-    const parsed = JSON.parse(response);
-    return {
-      taskId: parsed.taskId || "unknown",
-      status: parsed.status || "failed",
-      memories: parsed.memories,
-      conflicts: parsed.conflicts,
-      procedures: parsed.procedures,
-      decisions: parsed.decisions,
-      episodes: parsed.episodes,
-      warnings: parsed.warnings,
-      summary: parsed.summary || "",
-      confidence: parsed.confidence || 0.5,
-    };
-  } catch {
+  const statusMatch = response.match(/STATUS:\s*(success|partial|failed|blocked)/i);
+  const summaryMatch = response.match(/SUMMARY:\s*(.+)/i);
+  const status = statusMatch?.[1]?.toLowerCase() as
+    | "success"
+    | "partial"
+    | "failed"
+    | "blocked"
+    | undefined;
+
+  if (!status) {
     return {
       taskId: "parse-error",
       status: "failed",
-      summary: "Failed to parse Memory Agent response",
+      summary: response.substring(0, 200),
       confidence: 0,
     };
   }
-}
 
-// Hooks exposed for external use
-export { retrieveRelevantMemories, extractTaskMemories, extractFactsFromText, executeWithMemoryHooks, executeMemoryTask };
+  return {
+    taskId: "unknown",
+    status,
+    summary: summaryMatch?.[1]?.trim().substring(0, 500) || "No summary provided.",
+    confidence: status === "success" ? 1 : status === "partial" ? 0.6 : 0,
+  };
+}

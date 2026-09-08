@@ -1,63 +1,63 @@
-// Memory Hooks Tool - Enables automatic memory retrieval and extraction
-import { executeMemoryTask, retrieveRelevantMemories, extractFactsFromText } from "../agents/memory";
+// Memory Hooks Tool - thin native wrapper around the unified Mastra memory.
+// Actions: find (semantic recall + working memory context), store (labeled
+// working-memory block, secrets rejected), forget (labeled block / keyed line).
+// The old decorative retrieve, regex fact extraction and free-JSON execution
+// paths were removed (plan TASK-007/TASK-013).
+import { z } from "zod";
+import { memoryFindTool, memoryStoreTool, memoryForgetTool } from "../agents/memory/tools";
+
+const memoryHooksSchema = z.object({
+  action: z.enum(["retrieve", "store", "forget"]),
+  query: z.string().optional().describe("Search query (retrieve)"),
+  label: z.enum(["faits", "preferences", "decisions", "procedures"]).optional().describe("Working-memory block (store/forget)"),
+  content: z.string().optional().describe("Content to store (store)"),
+  subject: z.string().optional().describe("Optional key for the entry (store)"),
+  key: z.string().optional().describe("Keyed line to remove (forget)"),
+  resourceId: z.string().optional().describe("Resource scope"),
+  userId: z.string().optional().describe("User id used as resourceId fallback"),
+  threadId: z.string().optional().describe("Thread scope"),
+});
 
 export const memoryHooksTool = {
   name: "memory_hooks",
-  description: "Manage memory hooks - retrieve relevant memories before tasks, extract facts after, or execute tasks with automatic memory management.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      action: {
-        type: "string",
-        enum: ["retrieve", "extract", "execute", "execute_memory_task"],
-        description: "The hook action to perform"
-      },
-      task: { type: "string", description: "Task description for retrieval or execution" },
-      fn: { type: "string", description: "Function name to execute (for execute action)" },
-      project: { type: "string", description: "Project scope" },
-      repository: { type: "string", description: "Repository scope" },
-      scope: { type: "string", enum: ["global", "project", "repository"] },
-      scopeId: { type: "string" },
-      text: { type: "string", description: "Text to extract facts from" },
-    },
-    required: ["action"]
-  },
-  execute: async (input: {
-    action: "retrieve" | "extract" | "execute" | "execute_memory_task";
-    task?: string;
-    project?: string;
-    repository?: string;
-    scope?: "global" | "project" | "repository";
-    scopeId?: string;
-    text?: string;
-  }) => {
+  description:
+    "Explicit memory operations on Compagnon's unified memory: retrieve relevant context (semantic recall + working memory), store a durable entry into a labeled block, or forget a labeled block.",
+  inputSchema: memoryHooksSchema,
+  execute: async (input: z.infer<typeof memoryHooksSchema>) => {
+    const common = {
+      resourceId: input.resourceId,
+      userId: input.userId,
+      threadId: input.threadId,
+    };
+
     switch (input.action) {
-      case "retrieve":
-        if (!input.task) return { success: false, error: "task required" };
-        await retrieveRelevantMemories({
-          task: input.task,
-          project: input.project,
-          repository: input.repository,
+      case "retrieve": {
+        if (!input.query) return { success: false, error: "query required" };
+        const result = await memoryFindTool.execute({ query: input.query, ...common });
+        return { success: true, action: "retrieve", context: result.context, count: result.count };
+      }
+
+      case "store": {
+        if (!input.content) return { success: false, error: "content required" };
+        if (!input.label) return { success: false, error: "label required" };
+        const result = await memoryStoreTool.execute({
+          label: input.label,
+          content: input.content,
+          subject: input.subject,
+          ...common,
         });
-        return { success: true, action: "retrieve" };
+        return result;
+      }
 
-      case "extract":
-        if (!input.text) return { success: false, error: "text required" };
-        await extractFactsFromText(
-          input.text,
-          input.scope || "global",
-          input.scopeId,
-          "conversation"
-        );
-        return { success: true, action: "extract" };
-
-      case "execute_memory_task":
-        if (!input.task) return { success: false, error: "task required" };
-        const result = await executeMemoryTask(
-          input.task,
-          { project: input.project, repository: input.repository }
-        );
-        return { success: true, result };
+      case "forget": {
+        if (!input.label) return { success: false, error: "label required" };
+        const result = await memoryForgetTool.execute({
+          label: input.label,
+          key: input.key,
+          ...common,
+        });
+        return result;
+      }
 
       default:
         return { success: false, error: "Unknown action" };

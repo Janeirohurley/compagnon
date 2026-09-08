@@ -1,62 +1,35 @@
-// Agent-Memory Workflow - Native Mastra workflow
+// Agent-Memory Workflow - memory-first workflow over the unified Mastra memory.
+// Retrieves real context (semantic recall + working memory), executes the task
+// through generateWithMemory, then persists a concise fact when it succeeded.
 import { createWorkflow, createStep } from "@mastra/core/workflows";
-import { memoryManager } from "../agents/memory/services/memory-manager";
-import { companionAgent } from "../agents/companion/agent";
+import { generateWithMemory } from "../agents/companion/agent";
+import { resolveMemoryIds, retrieveContext, sanitizeForMemory } from "../agents/companion/memory-context";
+import { memoryStoreTool } from "../agents/memory/tools";
 import { z } from "zod";
 
-// Step 1: Retrieve context from Memory Agent
+const workflowInputSchema = z.object({
+  task: z.string(),
+  project: z.string().optional(),
+  repository: z.string().optional(),
+  resourceId: z.string().optional(),
+});
+
+// Step 1: Retrieve context from the unified memory
 const retrieveContextStep = createStep({
   id: "retrieve-context",
-  description: "Retrieves relevant memories, procedures, decisions, and episodes from the Memory Agent before executing the main task.",
-  inputSchema: z.object({
-    task: z.string(),
-    project: z.string().optional(),
-    repository: z.string().optional(),
-  }),
-  outputSchema: z.object({
-    task: z.string(),
+  description: "Retrieves relevant semantic recall and working memory (facts, preferences, decisions, procedures) for the task.",
+  inputSchema: workflowInputSchema,
+  outputSchema: workflowInputSchema.extend({
     context: z.string(),
     memoriesFound: z.number(),
   }),
   execute: async ({ inputData }) => {
-    // Use memory manager directly instead of agent
-    const results = await memoryManager.search({
-      query: inputData.task,
-      project: inputData.project,
-      repository: inputData.repository,
-      types: ["semantic", "episode", "procedure", "decision"],
-      limit: 10,
-    });
-
-    if (results.length === 0) {
-      return {
-        task: inputData.task,
-        context: "No relevant context found in memory.",
-        memoriesFound: 0,
-      };
-    }
-
-    // Format results as context
-    const contextParts = results.map((r) => {
-      const data = r.data as unknown as Record<string, unknown>;
-      switch (r.type) {
-        case "semantic":
-          return `Fact: ${data.subject} ${data.predicate} ${data.value}`;
-        case "episode":
-          return `Episode: ${data.trigger} - ${data.outcome}`;
-        case "procedure":
-          return `Procedure: ${data.name} - ${data.purpose}`;
-        case "decision":
-          return `Decision: ${data.title} - ${data.decision}`;
-        default:
-          return String(data);
-      }
-    });
-
+    const ids = resolveMemoryIds({ resourceId: inputData.resourceId ?? inputData.project });
+    const context = await retrieveContext(inputData.task, ids);
     return {
-      task: inputData.task,
-      context: contextParts.join("\n\n"),
-      memoriesFound: results.length,
+      ...inputData,
+      context,
+      memoriesFound: (context.match(/^- /gm) || []).length,
     };
   },
 });
@@ -64,9 +37,8 @@ const retrieveContextStep = createStep({
 // Step 2: Execute main task with retrieved context
 const executeTaskStep = createStep({
   id: "execute-task",
-  description: "Executes the main task using the Companion Agent with context retrieved from Memory Agent as background knowledge.",
-  inputSchema: z.object({
-    task: z.string(),
+  description: "Executes the main task using the Companion Agent with the unified memory context injected into the prompt.",
+  inputSchema: workflowInputSchema.extend({
     context: z.string(),
     memoriesFound: z.number(),
   }),
@@ -75,38 +47,25 @@ const executeTaskStep = createStep({
     context: z.string(),
     result: z.string(),
     success: z.boolean(),
+    resourceId: z.string().optional(),
   }),
   execute: async ({ inputData }) => {
-    const contextInfo = inputData.memoriesFound > 0
+    const contextInfo = inputData.context
       ? `Relevant context from memory:\n${inputData.context}\n\n`
       : "";
 
     const prompt = `${contextInfo}Task: ${inputData.task}`;
 
     try {
-      // companionAgent.generate() returns a Response object
-      const response = await companionAgent.generate(prompt);
-
-      // Get text from response
-      let text = "Task completed but no result returned.";
-      const resp = response as any;
-      if (resp) {
-        if (typeof resp.text === 'string') {
-          text = resp.text;
-        } else if (typeof resp === 'string') {
-          text = resp;
-        } else if (typeof resp.text === 'function') {
-          text = await resp.text() || text;
-        } else {
-          text = String(resp.text || JSON.stringify(resp));
-        }
-      }
-
+      const response = await generateWithMemory(prompt, {
+        resourceId: inputData.resourceId ?? inputData.project,
+      });
       return {
         task: inputData.task,
         context: inputData.context,
-        result: text,
+        result: response.text ?? "",
         success: true,
+        resourceId: inputData.resourceId ?? inputData.project,
       };
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(JSON.stringify(error));
@@ -116,81 +75,62 @@ const executeTaskStep = createStep({
         context: inputData.context,
         result: `Error: ${errorMsg}`,
         success: false,
+        resourceId: inputData.resourceId ?? inputData.project,
       };
     }
   },
 });
 
-// Step 3: Store new information to Memory Agent
+// Step 3: Store new information to the unified memory
 const storeMemoryStep = createStep({
   id: "store-memory",
-  description: "Analyzes the task result and stores any new facts, procedures, or decisions back to the Memory Agent for future retrieval.",
+  description: "When the task succeeded, persists a concise durable fact (sanitized) into the working memory.",
   inputSchema: z.object({
     task: z.string(),
     context: z.string(),
     result: z.string(),
     success: z.boolean(),
+    resourceId: z.string().optional(),
   }),
   outputSchema: z.object({
     stored: z.boolean(),
-    memoryId: z.string().optional(),
   }),
   execute: async ({ inputData }) => {
-    // Always pass through the data
-    const baseResult = {
-      task: inputData.task,
-      context: inputData.context,
-      result: inputData.result,
-      success: inputData.success,
-    };
-
     if (!inputData.success) {
-      return { ...baseResult, stored: false };
+      return { stored: false };
     }
 
-    // Extract key facts from the result and store them
-    const resultText = inputData.result || "";
-    const taskText = inputData.task || "";
+    const content = `résultat: ${inputData.result.substring(0, 500)}`;
+    if (sanitizeForMemory(content) === null) {
+      return { stored: false };
+    }
 
-    // Simple extraction: store the task outcome as an episode
     try {
-      await memoryManager.recordEpisode({
-        task: taskText.substring(0, 100),
-        trigger: taskText.substring(0, 200),
-        observations: [resultText.substring(0, 500)],
-        actions: [],
-        outcome: resultText.substring(0, 500),
-        success: true,
+      await memoryStoreTool.execute({
+        label: "faits",
+        subject: inputData.task.substring(0, 100),
+        content,
+        resourceId: inputData.resourceId,
       });
+      return { stored: true };
     } catch (e) {
       console.error("Failed to store memory:", e);
       return { stored: false };
     }
-
-    return {
-      ...baseResult,
-      stored: true,
-      memoryId: crypto.randomUUID(),
-    };
   },
 });
 
 // Create the workflow - chain steps with .then()
 export const agentMemoryWorkflow = createWorkflow({
   id: "agent-memory-workflow",
-  description: "Memory-first workflow: retrieves context from Memory Agent, executes task with Companion Agent, then stores new knowledge back to Memory Agent. This ensures every task benefits from existing knowledge and contributes new learnings.",
-  inputSchema: z.object({
-    task: z.string(),
-    project: z.string().optional(),
-    repository: z.string().optional(),
-  }),
+  description: "Memory-first workflow: retrieves context from the unified memory (semantic recall + working memory), executes the task with the Companion Agent, then stores new knowledge back into the working memory.",
+  inputSchema: workflowInputSchema,
   outputSchema: z.object({
     task: z.string(),
     context: z.string(),
     result: z.string(),
     success: z.boolean(),
     stored: z.boolean(),
-    memoryId: z.string().optional(),
   }),
 })
   .then(retrieveContextStep)

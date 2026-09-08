@@ -1,6 +1,5 @@
 // Main Agent (Compagnon) - Entry point
 import { Agent } from '@mastra/core/agent';
-import { Memory } from '@mastra/memory';
 
 import { companionInstructions } from '../../instructions/companion-instructions';
 import { getCompanionModelConfig } from '../../config/model-config';
@@ -17,29 +16,13 @@ import { notionAgent } from '../notion';
 import { planeAgent } from '../plane';
 import { researchAgent } from '../research';
 import { buildMemoryDelegationPrompt, parseMemoryTaskResult, type MemoryTask } from '../memory/delegation';
-import { retrieveRelevantMemories, extractTaskMemories } from '../memory/hooks';
+import { getCompanionMemory } from './memory';
+import { retrieveContext, resolveMemoryIds, sanitizeForMemory } from './memory-context';
 
 const model = getCompanionModelConfig();
 
 const nativeTools = getCompanionTools();
 const mcpTools = await getMcpToolsForAgent('companion');
-
-// Memory hooks wrapper - optional middleware
-// async function executeWithMemory(
-//   task: string,
-//   execute: () => Promise<{ text: string }>
-// ): Promise<{ text: string }> {
-//   await retrieveRelevantMemories({ task: task.substring(0, 500) });
-
-//   const result = await execute();
-
-//   await extractTaskMemories(
-//     { task: task.substring(0, 500) },
-//     { success: true, result: result.text.substring(0, 500) }
-//   );
-
-//   return result;
-// }
 
 export const companionAgent = new Agent({
   id: 'companion',
@@ -52,11 +35,7 @@ export const companionAgent = new Agent({
 
   model,
 
-  memory: new Memory({
-    options: {
-      generateTitle: false,
-    },
-  }),
+  memory: getCompanionMemory(),
 
   editor: {
     instructions: false,
@@ -118,20 +97,33 @@ export async function delegateToMemoryAgent(task: MemoryTask) {
   return parseMemoryTaskResult(response.text);
 }
 
-// Execute companion agent with memory hooks (automatic retrieval/extraction)
+// Execute the companion agent with real, injected memory context.
+// The relevant context is retrieved (resolveMemoryIds + retrieveContext) and
+// prepended to the prompt, and the native Mastra memory pipeline (message
+// history, semantic recall, working memory, observational memory) is enabled
+// via the `memory` option — all scoped to resourceId/threadId (default
+// resource "anonymous").
 export async function generateWithMemory(
   prompt: string,
   options?: Record<string, unknown>
 ): Promise<{ text: string }> {
-  await retrieveRelevantMemories({ task: prompt.substring(0, 500) });
+  const ids = resolveMemoryIds(options as Record<string, unknown>);
+
+  const context = await retrieveContext(prompt, ids);
+  const finalPrompt = context ? `${context}\n\n${prompt}` : prompt;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await (companionAgent as any).generate(prompt, options as any);
+  const result = await (companionAgent as any).generate(finalPrompt, {
+    ...(options ?? {}),
+    memory: {
+      thread: { id: ids.threadId || ids.resourceId, resourceId: ids.resourceId },
+      resource: ids.resourceId,
+    },
+  } as any);
 
-  await extractTaskMemories(
-    { task: prompt.substring(0, 500) },
-    { success: true, result: result.text.substring(0, 500) }
-  );
+  if (sanitizeForMemory(result.text ?? "") === null) {
+    console.warn("[Memory] Skipped explicit persistence of sensitive text (secret pattern detected).");
+  }
 
   return result;
 }

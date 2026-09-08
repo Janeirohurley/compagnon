@@ -1,4 +1,6 @@
-import { memoryManager } from "../agents/memory/services/memory-manager";
+import { getCompanionMemory } from "../agents/companion/memory";
+import { resolveMemoryIds } from "../agents/companion/memory-context";
+import { memoryFindTool, memoryStoreTool } from "../agents/memory/tools";
 import { agentMemoryWorkflow } from "../workflows/agent-memory-workflow";
 
 function json(data: unknown, status = 200) {
@@ -11,8 +13,13 @@ export const memoryRoutes = [
     method: 'GET' as const,
     handler: async (c: any) => {
       const query = c.req.query('q') || '';
-      const results = await memoryManager.search({ query, limit: 10 });
-      return json({ results });
+      if (!query) return json({ results: [] });
+      const result = await memoryFindTool.execute({ query });
+      return json({
+        results: result.context
+          ? [{ type: 'context', context: result.context, count: result.count }]
+          : [],
+      });
     },
   },
   {
@@ -20,23 +27,29 @@ export const memoryRoutes = [
     method: 'POST' as const,
     handler: async (c: any) => {
       const body = await c.req.json();
-      const memory = await memoryManager.remember({
-        scope: body.scope || 'global',
+      const result = await memoryStoreTool.execute({
+        label: body.label || 'faits',
+        content: body.value || body.content,
         subject: body.subject,
-        predicate: body.predicate,
-        value: body.value,
-        confidence: body.confidence || 0.8,
-        source: { type: 'user' },
+        resourceId: body.resourceId,
+        userId: body.userId,
+        threadId: body.threadId,
       });
-      return json({ memory });
+      if (!result.success) return json({ memory: result }, 400);
+      return json({ memory: result });
     },
   },
   {
     path: '/memory/list',
     method: 'GET' as const,
-    handler: async () => {
-      const memories = await memoryManager.listMemories();
-      return json({ memories });
+    handler: async (c: any) => {
+      const ids = resolveMemoryIds({ resourceId: c.req.query('resourceId') });
+      const memory = getCompanionMemory();
+      const workingMemory = await memory.getWorkingMemory({
+        threadId: ids.resourceId,
+        resourceId: ids.resourceId,
+      });
+      return json({ memories: workingMemory ?? '' });
     },
   },
   // Workflow route - Execute task with memory-first workflow
@@ -45,7 +58,7 @@ export const memoryRoutes = [
     method: 'POST' as const,
     handler: async (c: any) => {
       const body = await c.req.json();
-      const { task, project, repository } = body;
+      const { task, project, repository, resourceId } = body;
 
       if (!task) {
         return json({ error: 'task is required' }, 400);
@@ -55,7 +68,7 @@ export const memoryRoutes = [
         // Create and run the workflow
         const run = await agentMemoryWorkflow.createRun();
         const result = await run.start({
-          inputData: { task, project, repository },
+          inputData: { task, project, repository, resourceId },
         });
 
         if (result.status !== 'success') {

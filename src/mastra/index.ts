@@ -33,6 +33,8 @@ import { notionRoutes } from "./routes/notion-routes";
 import { researchRoutes } from "./routes/research-routes";
 import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 import { planExecutorWorkflow } from "./workflows/plan-executor-workflow";
+import { memoryMaintenanceWorkflow } from "./workflows/memory-maintenance-workflow";
+import { memoryMaintenanceTool } from "./tools/memory-maintenance-tool";
 
 // const originalFetch = globalThis.fetch;
 // globalThis.fetch = async (input, init) => {
@@ -47,8 +49,8 @@ import { planExecutorWorkflow } from "./workflows/plan-executor-workflow";
 
 export const mastra = new Mastra({
   agents: { agent, planner: plannerAgent, plane: planeAgent, outline: outlineAgent, notion: notionAgent, github: githubAgent, memory: memoryAgent, research: researchAgent },
-  tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool, planExecutorTool, requestPlanTool, researchRequestTool },
-  workflows: { agentMemoryWorkflow, planExecutorWorkflow },
+  tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool, memoryMaintenanceTool, planExecutorTool, requestPlanTool, researchRequestTool },
+  workflows: { agentMemoryWorkflow, planExecutorWorkflow, memoryMaintenanceWorkflow },
   storage: new MastraCompositeStore({
     id: "composite-storage",
     default: new LibSQLStore({
@@ -94,3 +96,21 @@ export const mastra = new Mastra({
     ],
   },
 });
+
+// Daily memory maintenance (TASK-019): when MEMORY_MAINTENANCE_CRON is set
+// (documented in .env.example, e.g. "0 3 * * *" UTC), register the workflow
+// schedule at boot. Best-effort: boot must not fail on schedule collisions.
+const maintenanceCron = process.env.MEMORY_MAINTENANCE_CRON;
+if (maintenanceCron) {
+  try {
+    await mastra.schedules.create({
+      id: "memory-maintenance",
+      workflowId: "memory-maintenance",
+      cron: maintenanceCron,
+      timezone: "UTC",
+      inputData: { resourceId: "anonymous" },
+    });
+  } catch (error) {
+    console.warn("memory-maintenance schedule not registered:", error);
+  }
+}

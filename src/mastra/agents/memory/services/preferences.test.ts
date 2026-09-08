@@ -1,90 +1,64 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { SemanticMemory } from '../domain/types';
 
-const { search, remember, supersedeMemory } = vi.hoisted(() => ({
-  search: vi.fn(),
-  remember: vi.fn(),
-  supersedeMemory: vi.fn(),
+const { getWorkingMemory, updateWorkingMemory } = vi.hoisted(() => ({
+  getWorkingMemory: vi.fn(),
+  updateWorkingMemory: vi.fn(),
 }));
 
-vi.mock('./memory-manager', () => ({
-  memoryManager: {
-    search,
-    remember,
-    supersedeMemory,
-  },
+vi.mock('../../companion/memory', () => ({
+  getCompanionMemory: () => ({ getWorkingMemory, updateWorkingMemory }),
 }));
 
 const { getPreference, setPreference } = await import('./preferences');
 
-function activeMemory(value: string, id: string): SemanticMemory {
-  return {
-    id,
-    scope: 'global',
-    subject: 'documentation-backend',
-    predicate: 'prefers',
-    value,
-    confidence: 0.95,
-    source: { type: 'user' },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    status: 'active',
-    useCount: 0,
-  };
+const WM_EMPTY = '# Préférences\n- documentation-backend: ';
+
+function wmWith(value: string): string {
+  return `# Préférences\n- documentation-backend: ${value}\n- pret-de-repondre: prudent`;
 }
 
-describe('memory preferences', () => {
+describe('memory preferences (working memory)', () => {
   beforeEach(() => {
-    search.mockReset();
-    remember.mockReset();
-    supersedeMemory.mockReset();
+    getWorkingMemory.mockReset();
+    updateWorkingMemory.mockReset();
+    getWorkingMemory.mockResolvedValue(WM_EMPTY);
   });
 
   it('returns null when no preference matches', async () => {
-    search.mockResolvedValue([]);
+    getWorkingMemory.mockResolvedValue('# Préférences\n- pret-de-repondre: prudent');
     expect(await getPreference('documentation-backend')).toBeNull();
-    expect(search).toHaveBeenCalledWith(
-      expect.objectContaining({ query: 'documentation-backend', scope: 'global' }),
-    );
   });
 
   it('returns the active preference value', async () => {
-    search.mockResolvedValue([
-      { type: 'semantic', id: 'm1', score: 0.95, data: activeMemory('notion', 'm1') },
-    ]);
+    getWorkingMemory.mockResolvedValue(wmWith('notion'));
     expect(await getPreference('documentation-backend')).toBe('notion');
   });
 
-  it('sets a new preference when none exists', async () => {
-    search.mockResolvedValue([]);
-    remember.mockResolvedValue(activeMemory('outline', 'new'));
+  it('sets a new preference line into an existing block', async () => {
+    getWorkingMemory.mockResolvedValue(WM_EMPTY);
     await setPreference('documentation-backend', 'outline', 'user');
-    expect(remember).toHaveBeenCalledWith(
+    expect(updateWorkingMemory).toHaveBeenCalledWith(
       expect.objectContaining({
-        subject: 'documentation-backend',
-        predicate: 'prefers',
-        value: 'outline',
-        scope: 'global',
+        resourceId: 'anonymous',
       }),
     );
-    expect(supersedeMemory).not.toHaveBeenCalled();
+    const { workingMemory } = updateWorkingMemory.mock.calls[0][0] as { workingMemory: string };
+    expect(workingMemory).toContain('- documentation-backend: outline');
   });
 
-  it('supersedes an existing preference when the value changes', async () => {
-    search.mockResolvedValueOnce([
-      { type: 'semantic', id: 'm1', score: 0.95, data: activeMemory('outline', 'm1') },
-    ]);
-    search.mockResolvedValueOnce([
-      { type: 'semantic', id: 'm1', score: 0.95, data: activeMemory('outline', 'm1') },
-    ]);
-    supersedeMemory.mockResolvedValue(activeMemory('notion', 'm2'));
-
+  it('overwrites the previous value for the same subject', async () => {
+    getWorkingMemory.mockResolvedValue(wmWith('outline'));
     await setPreference('documentation-backend', 'notion', 'user');
+    const { workingMemory } = updateWorkingMemory.mock.calls[0][0] as { workingMemory: string };
+    expect(workingMemory).toContain('- documentation-backend: notion');
+    expect(workingMemory).not.toContain('- documentation-backend: outline');
+    expect(workingMemory).toContain('- pret-de-repondre: prudent');
+  });
 
-    expect(supersedeMemory).toHaveBeenCalledWith(
-      'm1',
-      expect.objectContaining({ subject: 'documentation-backend', value: 'notion' }),
-    );
-    expect(remember).not.toHaveBeenCalled();
+  it('rejects a secret value', async () => {
+    await expect(
+      setPreference('documentation-backend', 'sk-abcdefghijklmnopqrstuvwxyz123456'),
+    ).rejects.toThrow('secret pattern detected');
+    expect(updateWorkingMemory).not.toHaveBeenCalled();
   });
 });
