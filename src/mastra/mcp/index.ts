@@ -1,1 +1,1 @@
-export { getMcpToolsForAgent, connectOAuthServer } from './registry';
+export { getMcpToolsForAgent, connectOAuthServer, hasValidOAuthTokens } from './registry';

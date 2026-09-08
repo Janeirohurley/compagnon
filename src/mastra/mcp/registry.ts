@@ -4,6 +4,7 @@ import {
   type MastraMCPServerDefinition,
   type OAuthStorage,
 } from '@mastra/mcp';
+import { spawn } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -89,10 +90,12 @@ function buildOAuthProvider(
     return null;
   }
 
+  const redirectUrl = interpolate(String(auth.redirectUrl));
+
   return new MCPOAuthClientProvider({
-    redirectUrl: auth.redirectUrl,
+    redirectUrl,
     clientMetadata: {
-      redirect_uris: [String(auth.redirectUrl)],
+      redirect_uris: [redirectUrl],
       client_name: auth.clientName,
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
@@ -102,8 +105,49 @@ function buildOAuthProvider(
       console.log(
         `[Compagnon] MCP "${config.id}" requires authorization. Please open in your browser:\n  ${url.toString()}`,
       );
+      openInBrowser(config.id, url.toString());
     },
   });
+}
+
+/**
+ * Opens an authorization URL in the user's default browser (new tab), falling
+ * back to just logging the URL when no desktop opener is available (headless
+ * server, CI, or a machine without a display). Fire-and-forget: a failure to
+ * open the browser must never block the OAuth flow, since the URL is always
+ * printed for manual copy.
+ */
+function openInBrowser(serverId: string, url: string): void {
+  let command: string;
+  const args: string[] = [];
+
+  switch (process.platform) {
+    case 'darwin':
+      command = 'open';
+      args.push(url);
+      break;
+    case 'win32':
+      command = 'cmd';
+      args.push('/c', 'start', '', url);
+      break;
+    default:
+      command = 'xdg-open';
+      args.push(url);
+      break;
+  }
+
+  try {
+    const child = spawn(command, args, { detached: true, stdio: 'ignore' });
+    child.on('error', () => {
+      // Browser opener unavailable (headless server / no DISPLAY): the flow
+      // still works via the printed authorization URL.
+    });
+    child.unref();
+  } catch (error) {
+    console.warn(
+      `[Compagnon] MCP "${serverId}": could not open the browser automatically (${error instanceof Error ? error.message : error}). Use the URL above.`,
+    );
+  }
 }
 
 function buildServerDefinition(config: McpServerConfig): MastraMCPServerDefinition | null {
@@ -256,6 +300,33 @@ async function loadServerTools(
   );
 
   return {};
+}
+
+/**
+ * True when the configured OAuth server currently holds valid tokens that the
+ * boot path would honor. Unlike file existence, this distinguishes a completed
+ * authorization from an interrupted one (e.g. registered client + code_verifier
+ * persisted but no access token exchanged).
+ */
+export async function hasValidOAuthTokens(serverId: string): Promise<boolean> {
+  const config = loadMcpServersConfig();
+  const server = config.servers.find((s) => s.id === serverId);
+
+  if (!server) {
+    return false;
+  }
+
+  const provider = buildOAuthProvider(server);
+
+  if (!provider) {
+    return false;
+  }
+
+  try {
+    return await provider.hasValidTokens();
+  } catch {
+    return false;
+  }
 }
 
 export async function getMcpToolsForAgent(agentId: string): Promise<Record<string, unknown>> {

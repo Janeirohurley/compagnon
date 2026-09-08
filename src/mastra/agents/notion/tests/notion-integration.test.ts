@@ -11,6 +11,7 @@ process.env.OMNIROUTE_MODEL = 'gpt-4o-mini';
 // workspace) remain an integration test that needs a connected workspace.
 const connectOAuthServer = vi.fn();
 const getMcpToolsForAgent = vi.fn(async () => ({}));
+const hasValidOAuthTokens = vi.fn(async () => false);
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
@@ -20,6 +21,7 @@ vi.mock('node:fs', async (importOriginal) => {
 vi.mock('../../../mcp', () => ({
   getMcpToolsForAgent,
   connectOAuthServer,
+  hasValidOAuthTokens,
 }));
 
 let notionConnectTool: any;
@@ -51,6 +53,8 @@ describe('Notion Agent integration with Compagnon', () => {
 
   beforeEach(() => {
     connectOAuthServer.mockReset();
+    hasValidOAuthTokens.mockReset();
+    hasValidOAuthTokens.mockResolvedValue(false);
   });
 
   it('is discoverable by Compagnon through the subagent registry', async () => {
