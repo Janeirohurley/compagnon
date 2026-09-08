@@ -82,22 +82,38 @@ async function generateStructured(
   schema: unknown,
   label: string,
 ): Promise<StructuredCall> {
-  try {
-    const response = await agent.generate(prompt, {
-      structuredOutput: {
-        schema,
-        jsonPromptInjection: "auto",
-      },
-    });
-    if (response?.object != null) {
-      return { ok: true, object: response.object };
+  // One retry: reasoning models occasionally end a tool-heavy turn without a
+  // final JSON object (Mastra then reports STRUCTURED_OUTPUT_SCHEMA_VALIDATION
+  // _FAILED with an undefined value). The second attempt forces the JSON
+  // instruction into the user message so the model responds with the object.
+  let lastError: string | undefined;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const attemptPrompt =
+      attempt === 1
+        ? prompt
+        : `${prompt}\n\nIMPORTANT: the previous attempt produced no valid JSON object. Respond NOW with exactly one JSON object matching the schema — no prose before or after, no tool calls.`;
+
+    try {
+      const response = await agent.generate(attemptPrompt, {
+        structuredOutput: {
+          schema,
+          jsonPromptInjection: attempt === 1 ? "auto" : "inline",
+        },
+      });
+      if (response?.object != null) {
+        return { ok: true, object: response.object };
+      }
+      lastError = `Agent returned no structured object (${label}).`;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
     }
-    return { ok: false, error: `Agent returned no structured object (${label}).` };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    trace(`${label}: agent.generate() failed → ${message}`);
-    return { ok: false, error: message };
+
+    trace(`${label}: attempt ${attempt} produced no structured object, retrying`);
   }
+
+  trace(`${label}: agent.generate() failed → ${lastError}`);
+  return { ok: false, error: lastError ?? `Agent returned no structured object (${label}).` };
 }
 
 function classifyToolFailure(text: string): ResearchErrorCode {
