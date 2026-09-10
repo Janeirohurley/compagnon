@@ -1,24 +1,19 @@
 import { memoryHooksTool } from './memory-hooks-tool';
 import { dateTimeTool } from './date-time-tool';
-import {
-  deleteProjectFileTool,
-  editProjectFileTool,
-  listProjectFilesTool,
-  readProjectFileTool,
-  writeProjectFileTool,
-} from './project-file-tools';
+import { createProjectFileTools } from './project-file-tools';
 import { companionFoundationTool } from './companion-foundation-tool';
 
-export function getCompanionTools() {
+/**
+ * Companion tool set. Project-file tools are built per workspace: pass the
+ * workspace's `projectPath` (undefined keeps the repository root) so every
+ * runtime closes over its own root.
+ */
+export function getCompanionTools(projectRoot?: string) {
   return {
     companion_foundation: companionFoundationTool,
     memory_hooks: memoryHooksTool,
     date_time: dateTimeTool,
 
-    list_project_files: listProjectFilesTool,
-    read_project_file: readProjectFileTool,
-    write_project_file: writeProjectFileTool,
-    edit_project_file: editProjectFileTool,
-    delete_project_file: deleteProjectFileTool,
+    ...createProjectFileTools(projectRoot),
   };
 }

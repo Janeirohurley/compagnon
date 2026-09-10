@@ -18,7 +18,6 @@ function findProjectRoot() {
   return process.cwd();
 }
 
-const projectRoot = findProjectRoot();
 const fileResultSchema = z.object({
   success: z.boolean(),
   path: z.string(),
@@ -30,9 +29,10 @@ const fileResultSchema = z.object({
   error: z.string().optional(),
 });
 
-function projectPath(path: string) {
-  const resolved = resolve(projectRoot, path);
-  const rel = relative(projectRoot, resolved);
+/** Resolve a project-relative path under `root`, rejecting any escape. */
+function projectPath(root: string, path: string) {
+  const resolved = resolve(root, path);
+  const rel = relative(root, resolved);
 
   if (rel.startsWith('..') || rel === '..' || resolve(rel) === rel) {
     throw new Error('Path must stay inside the project.');
@@ -49,129 +49,143 @@ function errorResult(path: string, error: unknown) {
   };
 }
 
-export const listProjectFilesTool = createTool({
-  id: 'list_project_files',
-  description: 'List files and folders inside this project after human approval.',
-  requireApproval: true,
-  inputSchema: z.object({
-    path: z.string().optional().describe('Project-relative folder path to list. Defaults to project root.'),
-  }),
-  outputSchema: fileResultSchema,
-  execute: async ({ path }) => {
-    const targetPath = path || '.';
+/**
+ * Build the project-file tool set bound to a single root directory.
+ *
+ * Each tool closes over the root resolved at construction time (`cfg.projectPath`
+ * of the workspace runtime, falling back to the repository root when absent) so
+ * concurrent workspaces never race on a module-global root. All five tools keep
+ * `requireApproval: true`.
+ */
+export function createProjectFileTools(projectRoot?: string) {
+  const root = projectRoot ? resolve(projectRoot) : findProjectRoot();
 
-    try {
-      const dirPath = projectPath(targetPath);
-      const names = await readdir(dirPath);
-      const entries = await Promise.all(
-        names.map(async name => {
-          const entryStat = await stat(resolve(dirPath, name));
-          return `${name}${entryStat.isDirectory() ? '/' : ''}`;
-        }),
-      );
+  return {
+    list_project_files: createTool({
+      id: 'list_project_files',
+      description: 'List files and folders inside this project after human approval.',
+      requireApproval: true,
+      inputSchema: z.object({
+        path: z.string().optional().describe('Project-relative folder path to list. Defaults to project root.'),
+      }),
+      outputSchema: fileResultSchema,
+      execute: async ({ path }) => {
+        const targetPath = path || '.';
 
-      return { success: true, path: targetPath, entries };
-    } catch (error) {
-      return errorResult(targetPath, error);
-    }
-  },
-});
+        try {
+          const dirPath = projectPath(root, targetPath);
+          const names = await readdir(dirPath);
+          const entries = await Promise.all(
+            names.map(async name => {
+              const entryStat = await stat(resolve(dirPath, name));
+              return `${name}${entryStat.isDirectory() ? '/' : ''}`;
+            }),
+          );
 
-export const readProjectFileTool = createTool({
-  id: 'read_project_file',
-  description: 'Read a text file from this project after human approval.',
-  requireApproval: true,
-  inputSchema: z.object({
-    path: z.string().describe('Project-relative file path to read.'),
-  }),
-  outputSchema: fileResultSchema,
-  execute: async ({ path }) => {
-    try {
-      return {
-        success: true,
-        path,
-        content: await readFile(projectPath(path), 'utf8'),
-      };
-    } catch (error) {
-      return errorResult(path, error);
-    }
-  },
-});
+          return { success: true, path: targetPath, entries };
+        } catch (error) {
+          return errorResult(targetPath, error);
+        }
+      },
+    }),
 
-export const writeProjectFileTool = createTool({
-  id: 'write_project_file',
-  description: 'Write a text file in this project after human approval. Creates parent folders if needed.',
-  requireApproval: true,
-  inputSchema: z.object({
-    path: z.string().describe('Project-relative file path to write.'),
-    content: z.string().describe('New file content.'),
-  }),
-  outputSchema: fileResultSchema,
-  execute: async ({ path, content }) => {
-    try {
-      const filePath = projectPath(path);
+    read_project_file: createTool({
+      id: 'read_project_file',
+      description: 'Read a text file from this project after human approval.',
+      requireApproval: true,
+      inputSchema: z.object({
+        path: z.string().describe('Project-relative file path to read.'),
+      }),
+      outputSchema: fileResultSchema,
+      execute: async ({ path }) => {
+        try {
+          return {
+            success: true,
+            path,
+            content: await readFile(projectPath(root, path), 'utf8'),
+          };
+        } catch (error) {
+          return errorResult(path, error);
+        }
+      },
+    }),
 
-      await mkdir(dirname(filePath), { recursive: true });
-      await writeFile(filePath, content, 'utf8');
+    write_project_file: createTool({
+      id: 'write_project_file',
+      description: 'Write a text file in this project after human approval. Creates parent folders if needed.',
+      requireApproval: true,
+      inputSchema: z.object({
+        path: z.string().describe('Project-relative file path to write.'),
+        content: z.string().describe('New file content.'),
+      }),
+      outputSchema: fileResultSchema,
+      execute: async ({ path, content }) => {
+        try {
+          const filePath = projectPath(root, path);
 
-      return {
-        success: true,
-        path,
-        bytes: Buffer.byteLength(content),
-      };
-    } catch (error) {
-      return errorResult(path, error);
-    }
-  },
-});
+          await mkdir(dirname(filePath), { recursive: true });
+          await writeFile(filePath, content, 'utf8');
 
-export const editProjectFileTool = createTool({
-  id: 'edit_project_file',
-  description: 'Edit a text file in this project by replacing text after human approval.',
-  requireApproval: true,
-  inputSchema: z.object({
-    path: z.string().describe('Project-relative file path to edit.'),
-    oldText: z.string().describe('Existing text to replace.'),
-    newText: z.string().describe('Replacement text.'),
-    replaceAll: z.boolean().optional().describe('Replace all matches. Defaults to false.'),
-  }),
-  outputSchema: fileResultSchema,
-  execute: async ({ path, oldText, newText, replaceAll }) => {
-    try {
-      const filePath = projectPath(path);
-      const content = await readFile(filePath, 'utf8');
-      const replacements = replaceAll ? content.split(oldText).length - 1 : Number(content.includes(oldText));
+          return {
+            success: true,
+            path,
+            bytes: Buffer.byteLength(content),
+          };
+        } catch (error) {
+          return errorResult(path, error);
+        }
+      },
+    }),
 
-      if (replacements === 0) {
-        return { success: false, path, replacements: 0, error: 'oldText not found.' };
-      }
+    edit_project_file: createTool({
+      id: 'edit_project_file',
+      description: 'Edit a text file in this project by replacing text after human approval.',
+      requireApproval: true,
+      inputSchema: z.object({
+        path: z.string().describe('Project-relative file path to edit.'),
+        oldText: z.string().describe('Existing text to replace.'),
+        newText: z.string().describe('Replacement text.'),
+        replaceAll: z.boolean().optional().describe('Replace all matches. Defaults to false.'),
+      }),
+      outputSchema: fileResultSchema,
+      execute: async ({ path, oldText, newText, replaceAll }) => {
+        try {
+          const filePath = projectPath(root, path);
+          const content = await readFile(filePath, 'utf8');
+          const replacements = replaceAll ? content.split(oldText).length - 1 : Number(content.includes(oldText));
 
-      const nextContent = replaceAll ? content.split(oldText).join(newText) : content.replace(oldText, newText);
-      await writeFile(filePath, nextContent, 'utf8');
+          if (replacements === 0) {
+            return { success: false, path, replacements: 0, error: 'oldText not found.' };
+          }
 
-      return { success: true, path, replacements };
-    } catch (error) {
-      return errorResult(path, error);
-    }
-  },
-});
+          const nextContent = replaceAll ? content.split(oldText).join(newText) : content.replace(oldText, newText);
+          await writeFile(filePath, nextContent, 'utf8');
 
-export const deleteProjectFileTool = createTool({
-  id: 'delete_project_file',
-  description: 'Delete a file or folder from this project after human approval.',
-  requireApproval: true,
-  inputSchema: z.object({
-    path: z.string().describe('Project-relative file or folder path to delete.'),
-    recursive: z.boolean().optional().describe('Delete folders recursively. Defaults to false.'),
-  }),
-  outputSchema: fileResultSchema,
-  execute: async ({ path, recursive }) => {
-    try {
-      await rm(projectPath(path), { recursive: recursive ?? false });
+          return { success: true, path, replacements };
+        } catch (error) {
+          return errorResult(path, error);
+        }
+      },
+    }),
 
-      return { success: true, path, deleted: true };
-    } catch (error) {
-      return errorResult(path, error);
-    }
-  },
-});
+    delete_project_file: createTool({
+      id: 'delete_project_file',
+      description: 'Delete a file or folder from this project after human approval.',
+      requireApproval: true,
+      inputSchema: z.object({
+        path: z.string().describe('Project-relative file or folder path to delete.'),
+        recursive: z.boolean().optional().describe('Delete folders recursively. Defaults to false.'),
+      }),
+      outputSchema: fileResultSchema,
+      execute: async ({ path, recursive }) => {
+        try {
+          await rm(projectPath(root, path), { recursive: recursive ?? false });
+
+          return { success: true, path, deleted: true };
+        } catch (error) {
+          return errorResult(path, error);
+        }
+      },
+    }),
+  };
+}

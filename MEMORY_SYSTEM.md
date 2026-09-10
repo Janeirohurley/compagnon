@@ -209,6 +209,36 @@ curl .../memory/list
 
 ---
 
+## Workspaces (tenancy mémoire)
+
+Les mémoires sont scopées par **workspace** (= `resourceId` Mastra). Deux
+workspaces ne voient jamais le contenu l'un de l'autre : working memory,
+recall sémantique, threads et connexions sont tous keyés sur le workspace.
+
+- Résolution : header `x-workspace-id` > body `workspaceId` > query >
+  `"default"` (bootstrap).
+- API : `GET /workspaces`, `POST /workspaces` (`{ name, slug?, config? }`).
+- Le companion s'exécute sur le workspace résolu : `GET /conversations`,
+  `POST /chat`, `/memory/*`, `/connections` acceptent tous le header
+  `x-workspace-id`.
+- Runtime par workspace (`workspaces/runtime.ts`) : le Memory Agent du
+  workspace est monté si `config.enabledAgents` contient `memory`.
+
+```bash
+# deux workspaces isolés
+curl -X POST http://localhost:4111/workspaces -H 'content-type: application/json' \
+  -d '{"name":"A","workspaceId":"w-a"}'
+curl -X POST http://localhost:4111/workspaces -H 'content-type: application/json' \
+  -d '{"name":"B","workspaceId":"w-b"}'
+
+curl -X POST http://localhost:4111/memory/remember -H 'x-workspace-id: w-b' \
+  -d '{"subject":"compagnon","predicate":"mouse","value":"secret-B"}'
+curl -X POST http://localhost:4111/memory/search -H 'x-workspace-id: w-a' \
+  -d '{"q":"secret"}'     # → aucun résultat
+```
+
+---
+
 ## Prochaines étapes possibles
 
 - Intégration avec vecteur search (pgvector)

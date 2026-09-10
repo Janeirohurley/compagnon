@@ -283,6 +283,51 @@ pnpm build   # Build production
 pnpm start   # Démarrer production
 ```
 
+## Workspaces
+
+Compagnon tient sa tenancy par **workspace** : un workspace est un alias
+application sur le `resourceId` Mastra. Les threads, conversations, mémoires
+et connexions sont scopés par workspace ; le runtime (agents activés, racine
+fichiers, modèle, instructions) est construit par workspace.
+
+**Résolution du workspace** (dans cet ordre) :
+
+1. header `x-workspace-id`
+2. body/JSON `workspaceId`
+3. query `workspaceId`
+4. `default` (bootstrap automatique)
+
+**API**
+
+```
+GET  /workspaces            # lister les workspaces (id, name, slug, config)
+GET  /workspaces/:id        # détail d'un workspace
+POST /workspaces            # créer { name, slug?, config? } → 201 + workspace
+```
+
+`config` (optionnel) : `projectPath` (racine des outils fichiers),
+`enabledAgents` (sous-agents montés), `model`, `instructions`.
+
+**Runtime** : `src/mastra/workspaces/runtime.ts` expose
+`getWorkspaceRuntime(workspaceId)` (mis en cache, construit le companion +
+les sous-agents activés, tools MCP filtrés aux agents activés) et
+`dropWorkspaceRuntime(id)` (mise à jour de la config). Les routes et l'`index.ts`
+résolvent tous les agents par le runtime — plus aucun singleton d'agent.
+
+**Exemple**
+
+```bash
+# créer un workspace
+curl -X POST http://localhost:4111/workspaces \
+  -H 'content-type: application/json' \
+  -d '{"name":"Guest A","workspaceId":"guest-a","config":{"projectPath":"/ws/guest-a","enabledAgents":["memory","planner"]}}'
+
+# chatter dans ce workspace (mémoire/conversations scopées)
+curl -X POST http://localhost:4111/chat \
+  -H 'content-type: application/json' -H 'x-workspace-id: guest-a' \
+  -d '{"messages":[{"role":"user","content":"Liste les fichiers du projet"}]}'
+```
+
 ---
 
 ## Points clés
