@@ -24,6 +24,7 @@ import { requestPlanTool } from "./tools/request-plan-tool";
 import { researchRequestTool } from "./tools/research-request-tool";
 import { MastraEditor } from "@mastra/editor";
 import { chatRoute } from "@mastra/ai-sdk";
+import { chatRoutes } from "./routes/chat-routes";
 import { connectionsRoutes } from "./routes/connections-routes";
 import { memoryRoutes } from "./routes/memory-routes";
 import { plannerRoutes } from "./routes/planner-routes";
@@ -74,10 +75,7 @@ export const mastra = new Mastra({
   }),
   server: {
     apiRoutes: [
-      chatRoute({
-        path: "/chat",
-        agent: "companion",
-      }),
+      ...chatRoutes,
       chatRoute({
         path: "/chat/plane",
         agent: "plane",

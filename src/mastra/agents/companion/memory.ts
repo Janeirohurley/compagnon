@@ -32,13 +32,20 @@ export const COMPANION_WORKING_MEMORY_TEMPLATE = `# Faits
 
 let _memory: Memory | undefined;
 
+/**
+ * Shared LibSQL store backing the companion memory. Exported so the chat
+ * routes can read/write threads and messages of the *same* database the agent
+ * persists to (single instance, one connection pool).
+ */
+export const companionStorage = new LibSQLStore({
+  id: "companion-memory-storage",
+  url: DB_URL,
+  authToken: DB_TOKEN,
+});
+
 export function buildCompanionMemory(): Memory {
   return new Memory({
-    storage: new LibSQLStore({
-      id: "companion-memory-storage",
-      url: DB_URL,
-      authToken: DB_TOKEN,
-    }),
+    storage: companionStorage,
     vector: new LibSQLVector({
       id: "companion-memory-vector",
       url: DB_URL,
