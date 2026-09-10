@@ -1,5 +1,5 @@
 // GitHub Agent — Entry point
-export { githubAgent } from "./agent";
+export { createGithubAgent } from "./agent";
 export { githubInstructions } from "./github-instructions";
 export { getGitHubConfig, requireGitHubToken } from "./config";
 export * from "./domain/types";

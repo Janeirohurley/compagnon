@@ -3,13 +3,12 @@ import { Memory } from "@mastra/memory";
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 
-import { companionModel } from "../../providers/omniroute";
+import type { WorkspaceConfig } from "../../workspaces/types";
+import { resolveWorkspaceModel } from "../../config/model-config";
+import { resolveChatModel } from "../../providers/resolve";
 import { githubInstructions } from "./github-instructions";
 import { getMcpToolsForAgent } from "../../mcp";
 import { getAuthenticatedUser, listUserRepositories } from "./tools/user-info";
-
-// Load MCP GitHub tools at startup
-const mcpTools = await getMcpToolsForAgent("github");
 
 // Tool: get the authenticated user's profile
 const getMyProfileTool = createTool({
@@ -68,21 +67,25 @@ const listMyReposTool = createTool({
   },
 });
 
-export const githubAgent = new Agent({
-  id: "github",
-  name: "GitHub Agent",
-  description:
-    "Compagnon's GitHub Agent. Handles all GitHub operations: issues, pull requests, code search, repository inspection, and account management. Knows the authenticated user's account via GITHUB_TOKEN.",
-  model: companionModel,
-  instructions: githubInstructions,
-  memory: new Memory({
-    options: {
-      generateTitle: false,
-    },
-  }),
-  tools: {
-    ...mcpTools,
-    github_get_my_profile: getMyProfileTool,
-    github_list_my_repos: listMyReposTool,
-  } as Record<string, any>,
-});
+export function createGithubAgent(cfg?: WorkspaceConfig): Agent {
+  const companionModel = resolveChatModel(resolveWorkspaceModel(cfg?.model));
+
+  return new Agent({
+    id: "github",
+    name: "GitHub Agent",
+    description:
+      "Compagnon's GitHub Agent. Handles all GitHub operations: issues, pull requests, code search, repository inspection, and account management. Knows the authenticated user's account via GITHUB_TOKEN.",
+    model: companionModel,
+    instructions: githubInstructions,
+    memory: new Memory({
+      options: {
+        generateTitle: false,
+      },
+    }),
+    tools: async () => ({
+      ...(await getMcpToolsForAgent("github")),
+      github_get_my_profile: getMyProfileTool,
+      github_list_my_repos: listMyReposTool,
+    }) as Record<string, any>,
+  });
+}

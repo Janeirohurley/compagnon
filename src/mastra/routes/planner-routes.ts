@@ -1,4 +1,6 @@
-import { runPlanner, plannerAgent } from "../agents/planner";
+import { runPlanner } from "../agents/planner";
+import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
+import { getWorkspaceRuntime } from "../workspaces/runtime";
 
 function json(data: unknown, status = 200) {
   return Response.json(data, { status });
@@ -16,7 +18,15 @@ export const plannerRoutes = [
         return json({ error: 'objective (string) is required' }, 400);
       }
 
+      // Phase 2: agent instance comes from the workspace runtime.
+      const workspaceId = resolveWorkspaceFromRequest(c, body);
+
       try {
+        const runtime = await getWorkspaceRuntime(workspaceId);
+        const plannerAgent = runtime.agents.planner;
+        if (!plannerAgent) {
+          return json({ error: `Planner agent is not enabled for workspace '${workspaceId}'` }, 404);
+        }
         const result = await runPlanner(plannerAgent, {
           objective,
           context: body.context,

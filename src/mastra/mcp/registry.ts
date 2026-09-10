@@ -14,6 +14,7 @@ import {
   buildArgs,
   getMcpServersForAgent,
   interpolate,
+  isMcpServerEnabled,
   loadMcpServersConfig,
   mapEnv,
 } from './config';
@@ -368,6 +369,27 @@ export async function getMcpToolsForAgent(agentId: string): Promise<Record<strin
   const servers = getMcpServersForAgent(config, agentId);
   const tools: Record<string, unknown> = {};
 
+  for (const server of servers) {
+    Object.assign(tools, await loadServerTools(server, config.global ?? {}));
+  }
+
+  return tools;
+}
+
+/**
+ * Load the union of MCP tools for several agent ids (used by the workspace
+ * runtime so the companion only exposes MCP servers whose agent is enabled for
+ * that workspace). Servers are de-duplicated by id.
+ */
+export async function getMcpToolsForAgents(agentIds: string[]): Promise<Record<string, unknown>> {
+  const config = loadMcpServersConfig();
+  const wanted = new Set(agentIds);
+
+  const servers = config.servers.filter(
+    (server) => server.agents?.some((agentId) => wanted.has(agentId)) && isMcpServerEnabled(server),
+  );
+
+  const tools: Record<string, unknown> = {};
   for (const server of servers) {
     Object.assign(tools, await loadServerTools(server, config.global ?? {}));
   }

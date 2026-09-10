@@ -1,5 +1,7 @@
-import { notionAgent } from "../agents/notion/agent";
 import { getNotionConfig } from "../agents/notion/config";
+import { getWorkspaceRuntime } from "../workspaces/runtime";
+import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
+import { buildWorkspaceRequestContext } from "../workspaces/request-context";
 
 function json(data: unknown, status = 200) {
   return Response.json(data, { status });
@@ -17,6 +19,14 @@ export const notionRoutes = [
         return json({ error: "Missing required field: operation" }, 400);
       }
 
+      const workspaceId = resolveWorkspaceFromRequest(c, body);
+
+      const runtime = await getWorkspaceRuntime(workspaceId);
+      const notionAgent = runtime.agents.notion;
+      if (!notionAgent) {
+        return json({ error: `Notion agent is not enabled for workspace '${workspaceId}'` }, 404);
+      }
+
       const prompt = [
         `Execute the following Notion operation: ${operation}`,
         parameters ? `Parameters: ${JSON.stringify(parameters, null, 2)}` : "",
@@ -25,7 +35,10 @@ export const notionRoutes = [
         .filter(Boolean)
         .join("\n");
 
-      const result = await notionAgent.generate([{ role: "user", content: prompt }]);
+      const result = await notionAgent.generate(
+        [{ role: "user", content: prompt }],
+        { requestContext: buildWorkspaceRequestContext(workspaceId) },
+      );
 
       return json({ status: "success", result: result.text });
     },

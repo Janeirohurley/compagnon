@@ -11,7 +11,7 @@ let notionConnectTool: any;
 describe('Notion Agent', () => {
   beforeAll(async () => {
     const mod = await import('../index');
-    notionAgent = mod.notionAgent;
+    notionAgent = mod.createNotionAgent();
     notionInstructions = mod.notionInstructions;
     notionConnectTool = mod.notionConnectTool;
   });

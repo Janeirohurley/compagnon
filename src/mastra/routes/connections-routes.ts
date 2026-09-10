@@ -1,5 +1,6 @@
 import { getConnectionProvider, listConnectionProviders } from '../connections/connection-providers';
 import { listConnections, upsertConnection } from '../connections/connection-store';
+import { resolveWorkspaceFromRequest } from '../workspaces/resolve';
 
 async function readJson(c: any) {
   return c.req.json();
@@ -28,7 +29,8 @@ export const connectionsRoutes = [
     method: 'GET' as const,
     handler: async (c: any) => {
       const provider = c.req.query('provider');
-      return json(await listConnections(provider));
+      const workspaceId = resolveWorkspaceFromRequest(c);
+      return json(await listConnections(workspaceId, provider));
     },
   },
   {
@@ -39,6 +41,7 @@ export const connectionsRoutes = [
         const body = await readJson(c);
         const connection = await upsertConnection({
           id: body.id,
+          workspaceId: resolveWorkspaceFromRequest(c, body),
           provider: body.provider,
           name: body.name,
           config: body.config,

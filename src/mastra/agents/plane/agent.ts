@@ -1,25 +1,31 @@
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 
-import { companionModel } from "../../providers/omniroute";
+import type { WorkspaceConfig } from "../../workspaces/types";
+import { resolveWorkspaceModel } from "../../config/model-config";
+import { resolveChatModel } from "../../providers/resolve";
 import { getMcpToolsForAgent } from "../../mcp";
 import { planeInstructions } from "./plane-instructions";
 
-const mcpTools = await getMcpToolsForAgent("plane");
+export function createPlaneAgent(cfg?: WorkspaceConfig): Agent {
+  const companionModel = resolveChatModel(resolveWorkspaceModel(cfg?.model));
 
-export const planeAgent = new Agent({
-  id: "plane",
-  name: "Plane Agent",
-  description:
-    "Compagnon's Plane specialist. Handles workspaces, projects, work items, cycles, modules, comments, and relations through the Plane MCP server.",
-  model: companionModel,
-  instructions: planeInstructions,
-  memory: new Memory({
-    options: {
-      generateTitle: false,
-    },
-  }),
-  tools: {
-    ...mcpTools,
-  } as Record<string, any>,
-});
+  return new Agent({
+    id: "plane",
+    name: "Plane Agent",
+    description:
+      "Compagnon's Plane specialist. Handles workspaces, projects, work items, cycles, modules, comments, and relations through the Plane MCP server.",
+    model: companionModel,
+    instructions: planeInstructions,
+    memory: new Memory({
+      options: {
+        generateTitle: false,
+      },
+    }),
+    // MCP host tools are loaded lazily on each run (no top-level await): the
+    // runtime only builds agents whose workspace has them enabled.
+    tools: async () => ({
+      ...(await getMcpToolsForAgent("plane")),
+    }) as Record<string, any>,
+  });
+}

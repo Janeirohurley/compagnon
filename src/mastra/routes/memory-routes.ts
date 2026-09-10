@@ -2,6 +2,7 @@ import { getCompanionMemory } from "../agents/companion/memory";
 import { resolveMemoryIds } from "../agents/companion/memory-context";
 import { memoryFindTool, memoryStoreTool } from "../agents/memory/tools";
 import { agentMemoryWorkflow } from "../workflows/agent-memory-workflow";
+import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
 
 function json(data: unknown, status = 200) {
   return Response.json(data, { status });
@@ -14,7 +15,8 @@ export const memoryRoutes = [
     handler: async (c: any) => {
       const query = c.req.query('q') || '';
       if (!query) return json({ results: [] });
-      const result = await memoryFindTool.execute({ query });
+      const ids = resolveMemoryIds({ workspaceId: resolveWorkspaceFromRequest(c) });
+      const result = await memoryFindTool.execute({ query, resourceId: ids.resourceId });
       return json({
         results: result.context
           ? [{ type: 'context', context: result.context, count: result.count }]
@@ -27,6 +29,7 @@ export const memoryRoutes = [
     method: 'POST' as const,
     handler: async (c: any) => {
       const body = await c.req.json();
+      const ids = resolveMemoryIds({ workspaceId: resolveWorkspaceFromRequest(c, body) });
       const result = await memoryStoreTool.execute({
         label: body.label || 'faits',
         content: body.value || body.content,
@@ -34,6 +37,7 @@ export const memoryRoutes = [
         resourceId: body.resourceId,
         userId: body.userId,
         threadId: body.threadId,
+        ...{ workspaceId: ids.resourceId },
       });
       if (!result.success) return json({ memory: result }, 400);
       return json({ memory: result });
@@ -43,7 +47,7 @@ export const memoryRoutes = [
     path: '/memory/list',
     method: 'GET' as const,
     handler: async (c: any) => {
-      const ids = resolveMemoryIds({ resourceId: c.req.query('resourceId') });
+      const ids = resolveMemoryIds({ workspaceId: resolveWorkspaceFromRequest(c) });
       const memory = getCompanionMemory();
       const workingMemory = await memory.getWorkingMemory({
         threadId: ids.resourceId,
@@ -58,7 +62,8 @@ export const memoryRoutes = [
     method: 'POST' as const,
     handler: async (c: any) => {
       const body = await c.req.json();
-      const { task, project, repository, resourceId } = body;
+      const workspaceId = resolveWorkspaceFromRequest(c, body);
+      const { task, project, repository } = body;
 
       if (!task) {
         return json({ error: 'task is required' }, 400);
@@ -68,7 +73,7 @@ export const memoryRoutes = [
         // Create and run the workflow
         const run = await agentMemoryWorkflow.createRun();
         const result = await run.start({
-          inputData: { task, project, repository, resourceId },
+          inputData: { task, project, repository, resourceId: workspaceId },
         });
 
         if (result.status !== 'success') {

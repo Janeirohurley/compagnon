@@ -4,6 +4,10 @@ import type { Mock } from 'vitest';
 process.env.OMNIROUTE_BASE_URL = 'https://api.omniroute.ai/v1';
 process.env.OMNIROUTE_API_KEY = 'test-key';
 process.env.OMNIROUTE_MODEL = 'gpt-4o-mini';
+// The workspace runtime reads the workspace registry from the LibSQL store;
+// give this test file its own database so it never races the default file.
+process.env.TURSO_DATABASE_URL = 'file:/tmp/compagnon-notion-integration-test.db';
+process.env.APP_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef';
 
 // Real Notion MCP requires OAuth credentials that are not available in CI. Mock
 // the MCP registry layer so the agent's integration surface can be tested
@@ -12,6 +16,7 @@ process.env.OMNIROUTE_MODEL = 'gpt-4o-mini';
 const connectOAuthServer = vi.fn();
 const disconnectOAuthServer = vi.fn(async () => true);
 const getMcpToolsForAgent = vi.fn(async () => ({}));
+const getMcpToolsForAgents = vi.fn(async () => ({}));
 const hasValidOAuthTokens = vi.fn(async () => false);
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -21,6 +26,7 @@ vi.mock('node:fs', async (importOriginal) => {
 
 vi.mock('../../../mcp', () => ({
   getMcpToolsForAgent,
+  getMcpToolsForAgents,
   connectOAuthServer,
   disconnectOAuthServer,
   hasValidOAuthTokens,
@@ -32,10 +38,11 @@ let getNotionConfig: (() => ReturnType<typeof import('../config')['getNotionConf
 let requireNotionConfig: (() => void) | undefined;
 let notionInstructions: string;
 let companionInstructions: string;
-let companionAgent: any;
 let notionTaskResultSchema: any;
 let NotionErrorCode: Record<string, string>;
 let existsSync: Mock;
+let companionAgent: any;
+let getWorkspaceRuntime: (id: string) => Promise<{ companion: any; agents: Record<string, any> }>;
 
 describe('Notion Agent integration with Compagnon', () => {
   beforeAll(async () => {
@@ -50,7 +57,9 @@ describe('Notion Agent integration with Compagnon', () => {
     const enums = await import('../domain/enums');
     NotionErrorCode = enums.NotionErrorCode;
     ({ companionInstructions } = await import('../../../instructions/companion-instructions'));
-    ({ companionAgent } = await import('../../companion/agent'));
+    const runtime = await import('../../../workspaces/runtime');
+    getWorkspaceRuntime = runtime.getWorkspaceRuntime;
+    companionAgent = (await getWorkspaceRuntime('default')).companion;
     const fs = await import('node:fs');
     existsSync = fs.existsSync as Mock;
   });

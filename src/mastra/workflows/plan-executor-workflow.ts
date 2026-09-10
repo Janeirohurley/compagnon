@@ -1,19 +1,15 @@
 // Plan Executor Workflow - executes a planner plan batch by batch with progressive validation
 import { createWorkflow, createStep } from "@mastra/core/workflows";
 import { z } from "zod";
-import { planeAgent } from "../agents/plane";
-import { outlineAgent } from "../agents/outline";
-import { notionAgent } from "../agents/notion";
-import { githubAgent } from "../agents/github";
+import type { Agent } from "@mastra/core/agent";
 import {
-  memoryAgent,
   buildMemoryDelegationPrompt,
   parseMemoryTaskResult,
   type MemoryTask,
   type MemoryTaskResult,
   type MemoryOperation,
 } from "../agents/memory";
-import { researchAgent, runResearch, formatResearchSummary } from "../agents/research";
+import { runResearch, formatResearchSummary } from "../agents/research";
 import type { ResearchResult } from "../agents/research/domain/types";
 import { executionPlanSchema } from "../agents/planner/domain/schemas";
 import type { ExecutionPlan } from "../agents/planner/domain/types";
@@ -34,23 +30,30 @@ interface ExecutorAgent {
   ) => Promise<{ text?: string; object?: unknown }>;
 }
 
-const SPECIALIST_AGENTS: Record<string, { agent: ExecutorAgent; id: string }> = {
-  plane: { agent: planeAgent, id: "plane" },
-  outline: { agent: outlineAgent, id: "outline" },
-  documentation: { agent: outlineAgent, id: "outline" },
-  notion: { agent: notionAgent, id: "notion" },
-  github: { agent: githubAgent, id: "github" },
-  memory: { agent: memoryAgent, id: "memory" },
-  research: { agent: researchAgent, id: "research" },
+const SPECIALIST_AGENT_IDS: Record<string, string> = {
+  plane: "plane",
+  outline: "outline",
+  documentation: "outline",
+  notion: "notion",
+  github: "github",
+  memory: "memory",
+  research: "research",
 };
 
-let _companionAgent: ExecutorAgent | null = null;
-async function getCompanionAgent(): Promise<ExecutorAgent> {
-  if (!_companionAgent) {
-    const { companionAgent } = await import("../agents/companion/agent");
-    _companionAgent = companionAgent;
+// Agents are resolved lazily from the (cached) default workspace runtime. The
+// dynamic import avoids a static cycle: the runtime builds the companion whose
+// plan_executor tool imports this workflow.
+let _defaultAgents: Record<string, Agent> | null = null;
+async function getDefaultAgents(): Promise<Record<string, Agent>> {
+  if (!_defaultAgents) {
+    const { getDefaultWorkspaceRuntime } = await import("../workspaces/runtime");
+    const runtime = await getDefaultWorkspaceRuntime();
+    _defaultAgents = {
+      ...runtime.agents,
+      companion: runtime.companion,
+    };
   }
-  return _companionAgent;
+  return _defaultAgents;
 }
 
 /**
@@ -59,25 +62,25 @@ async function getCompanionAgent(): Promise<ExecutorAgent> {
  */
 export function resolveSuggestedAgentId(suggestedAgent?: string): string {
   const suggested = (suggestedAgent ?? "companion").toLowerCase().trim();
-  return SPECIALIST_AGENTS[suggested]?.id ?? "companion";
+  return SPECIALIST_AGENT_IDS[suggested] ?? "companion";
 }
 
 interface ResolvedAgent {
   id: string;
-  getAgent: () => Promise<ExecutorAgent>;
+  getAgent: () => Promise<Agent>;
 }
 
 function resolveTaskAgent(
   task: ExecutionPlan["tasks"][number],
 ): ResolvedAgent {
   const suggested = (task.suggestedAgent ?? "companion").toLowerCase().trim();
-  const specialist = SPECIALIST_AGENTS[suggested];
+  const specialist = SPECIALIST_AGENT_IDS[suggested];
 
   if (specialist) {
-    return { id: specialist.id, getAgent: () => Promise.resolve(specialist.agent) };
+    return { id: specialist, getAgent: async () => (await getDefaultAgents())[specialist] };
   }
 
-  return { id: "companion", getAgent: getCompanionAgent };
+  return { id: "companion", getAgent: async () => (await getDefaultAgents()).companion };
 }
 
 // ---------------------------------------------------------------------------
@@ -403,6 +406,11 @@ async function runResearchTask(
   };
 
   try {
+    const agents = await getDefaultAgents();
+    const researchAgent = agents.research;
+    if (!researchAgent) {
+      return { ok: false, error: "Research agent is not enabled." };
+    }
     const result = await runResearch(researchAgent, request);
     return mapResearchResultToReport(result, task);
   } catch (error) {
@@ -489,6 +497,11 @@ export async function runMemoryTask(
   };
 
   try {
+    const agents = await getDefaultAgents();
+    const memoryAgent = agents.memory;
+    if (!memoryAgent) {
+      return { ok: false, error: "Memory agent is not enabled." };
+    }
     const response = await memoryAgent.generate(buildMemoryDelegationPrompt(memoryTask));
     const text = extractTextFromResponse(response);
     const memoryResult = parseMemoryTaskResult(text);

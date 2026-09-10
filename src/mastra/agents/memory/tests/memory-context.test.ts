@@ -32,6 +32,24 @@ describe('resolveMemoryIds', () => {
     });
   });
 
+  it('prefers workspaceId over resourceId (tenancy alias)', () => {
+    expect(resolveMemoryIds({ workspaceId: 'ws-a', resourceId: 'user-1' })).toEqual({
+      resourceId: 'ws-a',
+    });
+  });
+
+  it('prefers workspaceId over userId', () => {
+    expect(resolveMemoryIds({ workspaceId: 'ws-a', userId: 'user-2' })).toEqual({
+      resourceId: 'ws-a',
+    });
+  });
+
+  it('ignores a blank workspaceId and falls through to resourceId', () => {
+    expect(resolveMemoryIds({ workspaceId: '   ', resourceId: 'res-1' })).toEqual({
+      resourceId: 'res-1',
+    });
+  });
+
   it('defaults to anonymous', () => {
     expect(resolveMemoryIds({})).toEqual({ resourceId: 'anonymous' });
   });

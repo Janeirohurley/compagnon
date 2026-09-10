@@ -1,17 +1,19 @@
 import { Agent } from '@mastra/core/agent';
+import type { WorkspaceConfig } from '../../workspaces/types';
 import { getCompanionModelConfig } from '../../config/model-config';
 import { memoryFindTool, memoryStoreTool, memoryForgetTool } from './tools';
 
-const model = getCompanionModelConfig();
+export function createMemoryAgent(cfg?: WorkspaceConfig): Agent {
+  const model = getCompanionModelConfig(cfg?.model);
 
-export const memoryAgent = new Agent({
-  id: 'memory-agent',
-  name: 'Memory Agent',
+  return new Agent({
+    id: 'memory-agent',
+    name: 'Memory Agent',
 
-  description:
-    'Specialized agent managing Compagnon unified memory: semantic recall over past conversations plus the resource-scoped working memory (facts, preferences, decisions, procedures).',
+    description:
+      'Specialized agent managing Compagnon unified memory: semantic recall over past conversations plus the resource-scoped working memory (facts, preferences, decisions, procedures).',
 
-  instructions: `You are Compagnon's Memory Agent.
+    instructions: `You are Compagnon's Memory Agent.
 
 Your responsibility is persistent knowledge management over the unified Mastra memory.
 
@@ -57,11 +59,12 @@ SUMMARY: <one concise line describing what was done>
 
 No JSON, no markdown fences — just the two lines above.`,
 
-  model,
+    model,
 
-  tools: {
-    memory_find: memoryFindTool,
-    memory_store: memoryStoreTool,
-    memory_forget: memoryForgetTool,
-  },
-});
+    tools: {
+      memory_find: memoryFindTool,
+      memory_store: memoryStoreTool,
+      memory_forget: memoryForgetTool,
+    },
+  });
+}

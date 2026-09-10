@@ -1,5 +1,5 @@
 // Outline Agent — Entry point
-export { outlineAgent } from "./agent";
+export { createOutlineAgent } from "./agent";
 export { outlineInstructions } from "./outline-instructions";
 export { getOutlineConfig, requireOutlineConfig } from "./config";
 export * from "./domain/types";

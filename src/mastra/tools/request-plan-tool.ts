@@ -1,6 +1,5 @@
 // Request Plan Tool - lets the Compagnon obtain a validated execution plan from the planner
 import { z } from "zod";
-import { plannerAgent } from "../agents/planner";
 import { planningResultSchema } from "../agents/planner/domain/schemas";
 
 function tryParse(value: string): unknown {
@@ -122,7 +121,14 @@ export const requestPlanTool = {
   }) => {
     try {
       const prompt = buildPlannerPrompt(input);
-      const response = await plannerAgent.generate(prompt);
+      // Lazy default-runtime resolve: the planner instance comes from the
+      // workspace runtime (avoid a static cycle with the agent factories).
+      const { getDefaultWorkspaceRuntime } = await import("../workspaces/runtime");
+      const { agents } = await getDefaultWorkspaceRuntime();
+      if (!agents.planner) {
+        return { planning: true, status: "blocked", error: "Planner agent is not enabled." };
+      }
+      const response = await agents.planner.generate(prompt);
       const text = extractTextFromResponse(response);
 
       const json = extractJsonBlock(text);

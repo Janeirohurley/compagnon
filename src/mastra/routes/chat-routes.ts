@@ -8,6 +8,7 @@ import {
 import type { MastraDBMessage } from "@mastra/core/agent";
 import { resolveMemoryIds } from "../agents/companion/memory-context";
 import { companionStorage, getCompanionMemory } from "../agents/companion/memory";
+import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
 
 const MASTRA_MEMORY_KEY = "MastraMemory";
 
@@ -113,6 +114,7 @@ export const chatRoutes = [
       }
 
       const ids = resolveMemoryIds({
+        workspaceId: resolveWorkspaceFromRequest(c, body),
         resourceId: body.resourceId,
         userId: body.userId,
         threadId: body.threadId,
@@ -156,7 +158,11 @@ export const chatRoutes = [
       const approved = body.approved === true;
       const reason = typeof body.reason === "string" && body.reason.length > 0 ? body.reason : undefined;
 
-      const ids = resolveMemoryIds({ resourceId: body.resourceId, threadId: body.threadId });
+      const ids = resolveMemoryIds({
+        workspaceId: resolveWorkspaceFromRequest(c, body),
+        resourceId: body.resourceId,
+        threadId: body.threadId,
+      });
       const threadId = ids.threadId || ids.resourceId;
       const resourceId = ids.resourceId;
       const requestContext = new RequestContext();
@@ -189,7 +195,7 @@ export const chatRoutes = [
     path: "/conversations",
     method: "GET" as const,
     handler: async (c: any) => {
-      const resourceId = resolveMemoryIds({ resourceId: c.req.query("resourceId") }).resourceId;
+      const resourceId = resolveMemoryIds({ workspaceId: resolveWorkspaceFromRequest(c), resourceId: c.req.query("resourceId") }).resourceId;
       const store = await memoryStore();
       const { threads } = await store.listThreads({
         filter: { resourceId },
@@ -204,7 +210,10 @@ export const chatRoutes = [
     method: "POST" as const,
     handler: async (c: any) => {
       const body = await c.req.json();
-      const { resourceId } = resolveMemoryIds({ resourceId: body.resourceId });
+      const { resourceId } = resolveMemoryIds({
+        workspaceId: resolveWorkspaceFromRequest(c, body),
+        resourceId: body.resourceId,
+      });
       const id = typeof body.id === "string" && body.id.trim() ? body.id : globalThis.crypto.randomUUID();
       const store = await memoryStore();
       const now = new Date();

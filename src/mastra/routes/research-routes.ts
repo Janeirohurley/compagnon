@@ -1,5 +1,7 @@
-import { runResearch, researchAgent, researchRequestSchema } from "../agents/research";
+import { runResearch, researchRequestSchema } from "../agents/research";
 import { getResearchConfig } from "../agents/research/config";
+import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
+import { getWorkspaceRuntime } from "../workspaces/runtime";
 
 function json(data: unknown, status = 200) {
   return Response.json(data, { status });
@@ -27,6 +29,13 @@ export const researchRoutes = [
       }
 
       try {
+        // Phase 2: agent instance comes from the workspace runtime.
+        const workspaceId = resolveWorkspaceFromRequest(c, body);
+        const runtime = await getWorkspaceRuntime(workspaceId);
+        const researchAgent = runtime.agents.research;
+        if (!researchAgent) {
+          return json({ error: `Research agent is not enabled for workspace '${workspaceId}'` }, 404);
+        }
         const result = await runResearch(researchAgent, parsed.data, {
           depth: parsed.data.depth,
         });

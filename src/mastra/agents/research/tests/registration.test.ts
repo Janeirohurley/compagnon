@@ -12,7 +12,7 @@ let runResearch: (...args: any[]) => Promise<unknown>;
 describe("Research Agent", () => {
   beforeAll(async () => {
     const mod = await import("../index");
-    researchAgent = mod.researchAgent;
+    researchAgent = mod.createResearchAgent();
     researchInstructions = mod.researchInstructions;
     runResearch = mod.runResearch;
   });

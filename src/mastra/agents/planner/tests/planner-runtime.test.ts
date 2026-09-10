@@ -1,9 +1,10 @@
 
-import { plannerAgent as planner } from "../agent";
+import { createPlannerAgent } from "../agent";
 import { runPlanner } from "../runtime/planner-runtime";
 
 
 async function main() {
+  const planner = createPlannerAgent();
   const result = await runPlanner(planner, {
     objective:
       "Ajouter Google OAuth et GitHub OAuth à notre application existante sans casser l'authentification actuelle, avec tests d'intégration et préparation du déploiement.",

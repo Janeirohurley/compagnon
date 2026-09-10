@@ -8,14 +8,8 @@ import {
   Observability,
   SensitiveDataFilter,
 } from "@mastra/observability";
-import { agent } from "./agents/companion/agent";
-import { plannerAgent } from "./agents/planner";
-import { planeAgent } from "./agents/plane";
-import { outlineAgent } from "./agents/outline";
-import { notionAgent } from "./agents/notion";
-import { githubAgent } from "./agents/github";
-import { memoryAgent } from "./agents/memory";
-import { researchAgent } from "./agents/research";
+import { getWorkspaceRuntime } from "./workspaces/runtime";
+import { DEFAULT_WORKSPACE_ID } from "./workspaces/types";
 
 import { startScheduleTool, stopScheduleTool } from "./tools/schedule-tools";
 import { memoryWorkflowTool } from "./tools/memory-workflow-tool";
@@ -36,6 +30,10 @@ import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 import { planExecutorWorkflow } from "./workflows/plan-executor-workflow";
 import { memoryMaintenanceWorkflow } from "./workflows/memory-maintenance-workflow";
 import { memoryMaintenanceTool } from "./tools/memory-maintenance-tool";
+import { workspaceRoutes } from "./routes/workspace-routes";
+import { providerRoutes } from "./routes/provider-routes";
+import { registerMemoryMaintenanceSchedules } from "./workspaces/schedules";
+import { refreshProviderCache } from "./providers/resolve";
 
 // const originalFetch = globalThis.fetch;
 // globalThis.fetch = async (input, init) => {
@@ -48,8 +46,23 @@ import { memoryMaintenanceTool } from "./tools/memory-maintenance-tool";
 //   return originalFetch(input, init);
 // };
 
+// Resolve the default workspace runtime once: the companion plus its enabled
+// sub-agents are the agents served by this instance (Registration keys are the
+// ones /chat agentId looks up — companion by id "companion" — kept stable from
+// the singleton era so clients and ai-sdk routes keep working unchanged).
+const defaultRuntime = await getWorkspaceRuntime(DEFAULT_WORKSPACE_ID);
+
 export const mastra = new Mastra({
-  agents: { agent, planner: plannerAgent, plane: planeAgent, outline: outlineAgent, notion: notionAgent, github: githubAgent, memory: memoryAgent, research: researchAgent },
+  agents: {
+    agent: defaultRuntime.companion,
+    planner: defaultRuntime.agents.planner,
+    plane: defaultRuntime.agents.plane,
+    outline: defaultRuntime.agents.outline,
+    notion: defaultRuntime.agents.notion,
+    github: defaultRuntime.agents.github,
+    memory: defaultRuntime.agents.memory,
+    research: defaultRuntime.agents.research,
+  },
   tools: { startScheduleTool, stopScheduleTool, memoryWorkflowTool, memoryMaintenanceTool, planExecutorTool, requestPlanTool, researchRequestTool },
   workflows: { agentMemoryWorkflow, planExecutorWorkflow, memoryMaintenanceWorkflow },
   storage: new MastraCompositeStore({
@@ -76,6 +89,8 @@ export const mastra = new Mastra({
   server: {
     apiRoutes: [
       ...chatRoutes,
+      ...workspaceRoutes,
+      ...providerRoutes,
       chatRoute({
         path: "/chat/plane",
         agent: "plane",
@@ -95,20 +110,21 @@ export const mastra = new Mastra({
   },
 });
 
-// Daily memory maintenance (TASK-019): when MEMORY_MAINTENANCE_CRON is set
+// Hydrate the provider registry cache at boot so factory-style resolution
+// (Phase 2) picks up registry defaults instead of the env fallback.
+await refreshProviderCache().catch((error) => {
+  console.warn("Provider registry cache refresh failed:", error);
+});
+
+// Daily memory maintenance (TASK-009): when MEMORY_MAINTENANCE_CRON is set
 // (documented in .env.example, e.g. "0 3 * * *" UTC), register the workflow
-// schedule at boot. Best-effort: boot must not fail on schedule collisions.
+// schedule per workspace at boot. Best-effort: boot must not fail on schedule
+// collisions or an unreadable workspace registry.
 const maintenanceCron = process.env.MEMORY_MAINTENANCE_CRON;
 if (maintenanceCron) {
   try {
-    await mastra.schedules.create({
-      id: "memory-maintenance",
-      workflowId: "memory-maintenance",
-      cron: maintenanceCron,
-      timezone: "UTC",
-      inputData: { resourceId: "anonymous" },
-    });
+    await registerMemoryMaintenanceSchedules(mastra, maintenanceCron);
   } catch (error) {
-    console.warn("memory-maintenance schedule not registered:", error);
+    console.warn("memory-maintenance schedule iteration not registered:", error);
   }
 }

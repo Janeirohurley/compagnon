@@ -1,4 +1,6 @@
-import { outlineAgent } from "../agents/outline/agent";
+import { getWorkspaceRuntime } from "../workspaces/runtime";
+import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
+import { buildWorkspaceRequestContext } from "../workspaces/request-context";
 
 function json(data: unknown, status = 200) {
   return Response.json(data, { status });
@@ -16,6 +18,14 @@ export const outlineRoutes = [
         return json({ error: "Missing required field: operation" }, 400);
       }
 
+      const workspaceId = resolveWorkspaceFromRequest(c, body);
+
+      const runtime = await getWorkspaceRuntime(workspaceId);
+      const outlineAgent = runtime.agents.outline;
+      if (!outlineAgent) {
+        return json({ error: `Outline agent is not enabled for workspace '${workspaceId}'` }, 404);
+      }
+
       const prompt = [
         `Execute the following Outline operation: ${operation}`,
         parameters ? `Parameters: ${JSON.stringify(parameters, null, 2)}` : "",
@@ -24,9 +34,10 @@ export const outlineRoutes = [
         .filter(Boolean)
         .join("\n");
 
-      const result = await outlineAgent.generate([
-        { role: "user", content: prompt },
-      ]);
+      const result = await outlineAgent.generate(
+        [{ role: "user", content: prompt }],
+        { requestContext: buildWorkspaceRequestContext(workspaceId) },
+      );
 
       return json({ status: "success", result: result.text });
     },

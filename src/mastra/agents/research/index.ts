@@ -1,5 +1,5 @@
 // Research Agent - Entry point
-export { researchAgent } from "./agent";
+export { createResearchAgent } from "./agent";
 export { researchInstructions } from "./research-instructions";
 export { runResearch } from "./runtime/research-runtime";
 export { getResearchConfig } from "./config";

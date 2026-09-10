@@ -1,5 +1,5 @@
 // Memory Agent - Entry point (unified Mastra memory)
-export { memoryAgent } from './agent';
+export { createMemoryAgent } from './agent';
 export {
   buildMemoryDelegationPrompt,
   parseMemoryTaskResult,

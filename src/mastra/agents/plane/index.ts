@@ -1,1 +1,1 @@
-export { planeAgent } from './agent';
+export { createPlaneAgent } from './agent';

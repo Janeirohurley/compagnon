@@ -1,4 +1,6 @@
-import { githubAgent } from "../agents/github/agent";
+import { getWorkspaceRuntime } from "../workspaces/runtime";
+import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
+import { buildWorkspaceRequestContext } from "../workspaces/request-context";
 
 function json(data: unknown, status = 200) {
   return Response.json(data, { status });
@@ -20,6 +22,14 @@ export const githubRoutes = [
         );
       }
 
+      const workspaceId = resolveWorkspaceFromRequest(c, body);
+
+      const runtime = await getWorkspaceRuntime(workspaceId);
+      const githubAgent = runtime.agents.github;
+      if (!githubAgent) {
+        return json({ error: `GitHub agent is not enabled for workspace '${workspaceId}'` }, 404);
+      }
+
       const prompt = [
         `Execute the following GitHub operation: ${operation}`,
         repository ? `Repository: ${repository}` : "",
@@ -29,9 +39,11 @@ export const githubRoutes = [
         .filter(Boolean)
         .join("\n");
 
-      const result = await githubAgent.generate([
-        { role: "user", content: prompt },
-      ]);
+      const result = await githubAgent.generate(
+        [{ role: "user", content: prompt }],
+        // Phase 1: tenant-scoped RequestContext (MASTRA_RESOURCE_ID_KEY).
+        { requestContext: buildWorkspaceRequestContext(workspaceId) },
+      );
 
       return json({
         status: "success",

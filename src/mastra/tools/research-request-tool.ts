@@ -1,7 +1,6 @@
 // Research Request Tool - lets Compagnon obtain a structured, evidence-backed
 // research report from the Research Agent.
 import { z } from "zod";
-import { researchAgent } from "../agents/research/agent";
 import { runResearch, formatResearchSummary } from "../agents/research";
 
 export const researchRequestTool = {
@@ -78,6 +77,17 @@ export const researchRequestTool = {
         depth: input.depth,
       };
 
+      const { getDefaultWorkspaceRuntime } = await import("../workspaces/runtime");
+      const { agents } = await getDefaultWorkspaceRuntime();
+      const researchAgent = agents.research;
+      if (!researchAgent) {
+        return {
+          researching: true,
+          status: "blocked",
+          question: input.question,
+          error: "Research agent is not enabled.",
+        };
+      }
       const result = await runResearch(researchAgent, request, {
         depth: input.depth,
         maxRuntimeMs: input.maxRuntimeMs,

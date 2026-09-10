@@ -10,15 +10,19 @@ export interface MemoryIds {
 
 /**
  * Resolve the resource/thread ids for a memory access.
- * Priority: `resourceId` > `userId`, last resort `anonymous` (documented default).
+ * Debug recommended: `workspaceId` first, then `resourceId`, then `userId`,
+ * last resort `anonymous` (documented default). `workspaceId` is the app-level
+ * tenancy alias for Mastra's `resourceId` (workspace-isolation plan).
  */
 export function resolveMemoryIds(meta?: Record<string, unknown>): MemoryIds {
   const resourceId =
-    typeof meta?.resourceId === "string"
-      ? meta.resourceId
-      : typeof meta?.userId === "string"
-        ? meta.userId
-        : "anonymous";
+    typeof meta?.workspaceId === "string" && meta.workspaceId.trim()
+      ? meta.workspaceId
+      : typeof meta?.resourceId === "string"
+        ? meta.resourceId
+        : typeof meta?.userId === "string"
+          ? meta.userId
+          : "anonymous";
   const threadId = typeof meta?.threadId === "string" ? meta.threadId : undefined;
   return { resourceId, threadId };
 }
