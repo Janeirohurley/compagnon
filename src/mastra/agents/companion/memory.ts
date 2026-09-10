@@ -7,7 +7,15 @@
 // the only way the app builds its memory.
 import { Memory } from "@mastra/memory";
 import { LibSQLStore, LibSQLVector } from "@mastra/libsql";
-import { companionModel, companionEmbeddingModel } from "../../providers/omniroute";
+import {
+  getDefaultChatRef,
+  getDefaultEmbeddingRef,
+  resolveChatModel,
+  resolveEmbeddingModel,
+} from "../../providers/resolve";
+
+const chatModel = resolveChatModel(getDefaultChatRef());
+const embeddingModel = resolveEmbeddingModel(getDefaultEmbeddingRef());
 
 const DB_URL = process.env.TURSO_DATABASE_URL || "file:./mastra.db";
 const DB_TOKEN = process.env.TURSO_AUTH_TOKEN;
@@ -51,7 +59,7 @@ export function buildCompanionMemory(): Memory {
       url: DB_URL,
       authToken: DB_TOKEN,
     }),
-    embedder: companionEmbeddingModel,
+    embedder: embeddingModel,
     options: {
       lastMessages: 20,
       semanticRecall: {
@@ -65,7 +73,7 @@ export function buildCompanionMemory(): Memory {
         template: COMPANION_WORKING_MEMORY_TEMPLATE,
       },
       observationalMemory: {
-        model: companionModel,
+        model: chatModel,
         temporalMarkers: true,
       },
       generateTitle: false,

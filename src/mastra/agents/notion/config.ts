@@ -2,7 +2,9 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 
-import { companionModel } from "../../providers/omniroute";
+import { getDefaultChatRef, resolveChatModel } from "../../providers/resolve";
+
+const companionModel = resolveChatModel(getDefaultChatRef());
 import { notionInstructions } from "./notion-instructions";
 
 export interface NotionConfig {

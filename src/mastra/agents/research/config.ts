@@ -5,7 +5,9 @@
  * capabilities are available from the environment so the agent can degrade
  * gracefully instead of failing hard.
  */
-import { companionModel } from "../../providers/omniroute";
+import { getDefaultChatRef, resolveChatModel } from "../../providers/resolve";
+
+const companionModel = resolveChatModel(getDefaultChatRef());
 import { researchInstructions } from "./research-instructions";
 
 export interface ResearchConfig {

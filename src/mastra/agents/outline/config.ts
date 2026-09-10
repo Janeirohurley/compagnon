@@ -1,4 +1,6 @@
-import { companionModel } from "../../providers/omniroute";
+import { getDefaultChatRef, resolveChatModel } from "../../providers/resolve";
+
+const companionModel = resolveChatModel(getDefaultChatRef());
 import { outlineInstructions } from "./outline-instructions";
 
 export interface OutlineConfig {

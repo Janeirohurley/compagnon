@@ -5,7 +5,9 @@
  * tool availability status.
  */
 
-import { companionModel } from "../../providers/omniroute";
+import { getDefaultChatRef, resolveChatModel } from "../../providers/resolve";
+
+const companionModel = resolveChatModel(getDefaultChatRef());
 import { githubInstructions } from "./github-instructions";
 
 export interface GitHubConfig {
