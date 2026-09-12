@@ -14,7 +14,7 @@ import { createNotionAgent } from '../agents/notion/agent';
 import { createPlaneAgent } from '../agents/plane/agent';
 import { createResearchAgent } from '../agents/research/agent';
 
-const FACTORIES: Record<string, (cfg: WorkspaceConfig) => Agent> = {
+const FACTORIES: Record<string, (cfg: WorkspaceConfig, workspaceId: string) => Agent> = {
   memory: createMemoryAgent,
   planner: createPlannerAgent,
   github: createGithubAgent,
@@ -25,12 +25,12 @@ const FACTORIES: Record<string, (cfg: WorkspaceConfig) => Agent> = {
 };
 
 /** Build one factory-built Agent per entry of `cfg.enabledAgents`, keyed by registration key. */
-export function buildSubAgents(cfg: WorkspaceConfig): Record<string, Agent> {
+export function buildSubAgents(cfg: WorkspaceConfig, workspaceId: string = 'default'): Record<string, Agent> {
   const agents: Record<string, Agent> = {};
   for (const id of cfg.enabledAgents) {
     const factory = FACTORIES[id];
     if (factory) {
-      agents[id] = factory(cfg);
+      agents[id] = factory(cfg, workspaceId);
     }
   }
   return agents;

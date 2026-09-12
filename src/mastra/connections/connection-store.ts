@@ -180,7 +180,16 @@ export async function upsertConnection(input: {
     ],
   });
 
-  return getConnection(id);
+  return getConnection(id, workspaceId);
+}
+
+export async function setConnectionEnabled(id: string, enabled: boolean, workspaceId = 'default') {
+  await ready();
+  await db.execute({
+    sql: 'UPDATE compagnon_connections SET enabled = ?, updated_at = ? WHERE id = ? AND workspace_id = ?',
+    args: [enabled ? 1 : 0, new Date().toISOString(), id, workspaceId],
+  });
+  return getConnection(id, workspaceId);
 }
 
 export async function updateConnectionStatus(

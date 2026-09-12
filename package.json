@@ -8,7 +8,7 @@
     "dev": "mastra dev",
     "build": "mastra build",
     "start": "mastra start",
-    "test": "vitest run src/mastra/plane/tests src/mastra/agents/notion/tests src/mastra/agents/companion/tests src/mastra/agents/memory/tests src/mastra/agents/memory/services/preferences.test.ts src/mastra/agents/research/tests src/mastra/workspaces/tests src/mastra/providers/tests src/mastra/tools/tests"
+    "test": "vitest run src/mastra/plane/tests src/mastra/agents/notion/tests src/mastra/agents/companion/tests src/mastra/agents/memory/tests src/mastra/agents/memory/services/preferences.test.ts src/mastra/agents/research/tests src/mastra/workspaces/tests src/mastra/providers/tests src/mastra/tools/tests src/mastra/projects/tests src/mastra/routes/tests"
   },
   "keywords": [],
   "author": "",

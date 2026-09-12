@@ -1,6 +1,7 @@
 // HTTP routes exposing the workspace registry (used by the UI in Phase 3).
 import { createWorkspace, listWorkspaces, getWorkspace } from "../workspaces/store";
 import { dropWorkspaceRuntime } from "../workspaces/runtime";
+import { dropWorkspaceProjectCompanions } from "../projects/runtime";
 import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
 import { DEFAULT_WORKSPACE_ID } from "../workspaces/types";
 
@@ -43,8 +44,10 @@ export const workspaceRoutes = [
         });
         // The workspace config may differ from any previously built runtime
         // (e.g. re-creating "default"): drop it so the next resolution picks
-        // up the new enabledAgents/model.
+        // up the new enabledAgents/model. Project companions inherit that
+        // config (and its project root fallback), so they go too.
         dropWorkspaceRuntime(id);
+        dropWorkspaceProjectCompanions(id);
         return json({ workspace }, 201);
       } catch (error) {
         return json(

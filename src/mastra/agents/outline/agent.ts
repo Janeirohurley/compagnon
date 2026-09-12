@@ -7,7 +7,7 @@ import { resolveChatModel } from "../../providers/resolve";
 import { outlineInstructions } from "./outline-instructions";
 import { getMcpToolsForAgent } from "../../mcp";
 
-export function createOutlineAgent(cfg?: WorkspaceConfig): Agent {
+export function createOutlineAgent(cfg?: WorkspaceConfig, workspaceId: string = 'default'): Agent {
   const companionModel = resolveChatModel(resolveWorkspaceModel(cfg?.model));
 
   return new Agent({
@@ -23,7 +23,7 @@ export function createOutlineAgent(cfg?: WorkspaceConfig): Agent {
       },
     }),
     tools: async () => ({
-      ...(await getMcpToolsForAgent("outline")),
+      ...(await getMcpToolsForAgent(workspaceId, "outline")),
     }) as Record<string, any>,
   });
 }

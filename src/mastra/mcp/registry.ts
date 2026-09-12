@@ -14,10 +14,10 @@ import {
   buildArgs,
   getMcpServersForAgent,
   interpolate,
-  isMcpServerEnabled,
   loadMcpServersConfig,
   mapEnv,
 } from './config';
+import { getEnabledServerIds, getWorkspaceServerSettings, listCustomServers, type WorkspaceMcpServer } from './mcp-store';
 
 const DEFAULT_CONNECT_RETRIES = 3;
 const DEFAULT_RETRY_DELAY_MS = 1000;
@@ -28,25 +28,32 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Minimal file-backed OAuth token store so Notion (or any OAuth MCP server)
- * keeps its tokens across process restarts. Tokens are kept outside the
- * repository under the user's home directory and never committed.
+ * keeps its tokens across process restarts and per workspace (each workspace
+ * can connect its own account). Tokens are kept outside the repository under
+ * the user's home directory and never committed.
+ *
+ * Legacy layout (~/.compagnon/oauth/<server>.json, single-workspace) is read
+ * as a fallback for the default workspace so existing authorizations survive.
  */
-function buildOAuthStorage(serverId: string): OAuthStorage {
-  const dir = join(homedir(), '.compagnon', 'oauth');
+function buildOAuthStorage(serverId: string, workspaceId = 'default'): OAuthStorage {
+  const dir = join(homedir(), '.compagnon', 'oauth', workspaceId);
   const file = join(dir, `${serverId}.json`);
+  const legacyFile = join(homedir(), '.compagnon', 'oauth-workspace-legacy', `${workspaceId}-${serverId}.json`);
 
   let cache: Record<string, string> | undefined;
 
   function load(): Record<string, string> {
     if (cache) return cache;
-    try {
-      if (existsSync(file)) {
-        cache = JSON.parse(readFileSync(file, 'utf-8')) as Record<string, string>;
+    cache = {};
+    for (const candidate of [file, legacyFile]) {
+      try {
+        if (existsSync(candidate)) {
+          cache = { ...cache, ...(JSON.parse(readFileSync(candidate, 'utf-8')) as Record<string, string>) };
+        }
+      } catch {
+        // malformed or missing, try next source
       }
-    } catch {
-      cache = {};
     }
-    cache = cache ?? {};
     return cache;
   }
 
@@ -82,9 +89,7 @@ function buildOAuthStorage(serverId: string): OAuthStorage {
  * Kept outside buildServerDefinition so the provider (and its persisted
  * token storage) survives disconnect/retry cycles within loadServerTools.
  */
-function buildOAuthProvider(
-  config: McpServerConfig,
-): MCPOAuthClientProvider | null {
+function buildOAuthProvider(config: McpServerConfig, workspaceId = 'default'): MCPOAuthClientProvider | null {
   const auth = config.auth;
 
   if (!auth || auth.provider !== 'mcp') {
@@ -101,10 +106,10 @@ function buildOAuthProvider(
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
     },
-    storage: buildOAuthStorage(config.id),
+    storage: buildOAuthStorage(config.id, workspaceId),
     onRedirectToAuthorization: (url) => {
       console.log(
-        `[Compagnon] MCP "${config.id}" requires authorization. Please open in your browser:\n  ${url.toString()}`,
+        `[Compagnon] MCP "${config.id}" (workspace "${workspaceId}") requires authorization. Please open in your browser:\n  ${url.toString()}`,
       );
       openInBrowser(config.id, url.toString());
     },
@@ -151,9 +156,13 @@ function openInBrowser(serverId: string, url: string): void {
   }
 }
 
-function buildServerDefinition(config: McpServerConfig): MastraMCPServerDefinition | null {
+function buildServerDefinition(
+  config: McpServerConfig,
+  overrides?: Record<string, string>,
+  workspaceId = 'default',
+): MastraMCPServerDefinition | null {
   if (config.type === 'stdio') {
-    const command = interpolate(config.command ?? '');
+    const command = interpolate(config.command ?? '', overrides);
 
     if (command === '') {
       console.warn(`[Compagnon] MCP "${config.id}": empty command, skipping.`);
@@ -162,8 +171,8 @@ function buildServerDefinition(config: McpServerConfig): MastraMCPServerDefiniti
 
     const definition: MastraMCPServerDefinition = {
       command,
-      args: buildArgs(config),
-      ...(config.env ? { env: mapEnv(config.env) } : {}),
+      args: buildArgs(config, overrides),
+      ...(config.env ? { env: mapEnv(config.env, overrides) } : {}),
       ...(config.inheritDefaultEnv !== undefined
         ? { inheritDefaultEnv: config.inheritDefaultEnv }
         : {}),
@@ -176,7 +185,7 @@ function buildServerDefinition(config: McpServerConfig): MastraMCPServerDefiniti
     return definition;
   }
 
-  const urlString = interpolate(config.url ?? '');
+  const urlString = interpolate(config.url ?? '', overrides);
 
   if (urlString === '') {
     console.warn(`[Compagnon] MCP "${config.id}": empty URL, skipping.`);
@@ -195,11 +204,13 @@ function buildServerDefinition(config: McpServerConfig): MastraMCPServerDefiniti
     return null;
   }
 
-  const oauthProvider = buildOAuthProvider(config);
+  const oauthProvider = buildOAuthProvider(config, workspaceId);
 
   return {
     url,
-    ...(config.headers ? { requestInit: { headers: mapEnv(config.headers) } } : {}),
+    ...(config.headers
+      ? { requestInit: { headers: mapEnv(config.headers, overrides ?? {}) } }
+      : {}),
     ...(config.allowedHosts ? { allowedHosts: config.allowedHosts } : {}),
     ...(oauthProvider ? { authProvider: oauthProvider } : {}),
     ...(config.timeout !== undefined ? { timeout: config.timeout } : {}),
@@ -212,14 +223,16 @@ function buildServerDefinition(config: McpServerConfig): MastraMCPServerDefiniti
 async function loadServerTools(
   config: McpServerConfig,
   global: { connectRetries?: number; retryDelayMs?: number; timeout?: number },
+  workspaceId = 'default',
+  overrides?: Record<string, string>,
 ): Promise<Record<string, unknown>> {
-  const definition = buildServerDefinition(config);
+  const definition = buildServerDefinition(config, overrides, workspaceId);
 
   if (!definition) {
     return {};
   }
 
-  const oauthProvider = buildOAuthProvider(config);
+  const oauthProvider = buildOAuthProvider(config, workspaceId);
 
   // OAuth servers must not block the boot when the user has not connected
   // yet. If there are no persisted valid tokens, degrade to an empty tool set:
@@ -309,7 +322,7 @@ async function loadServerTools(
  * authorization from an interrupted one (e.g. registered client + code_verifier
  * persisted but no access token exchanged).
  */
-export async function hasValidOAuthTokens(serverId: string): Promise<boolean> {
+export async function hasValidOAuthTokens(workspaceId: string, serverId: string): Promise<boolean> {
   const config = loadMcpServersConfig();
   const server = config.servers.find((s) => s.id === serverId);
 
@@ -317,7 +330,7 @@ export async function hasValidOAuthTokens(serverId: string): Promise<boolean> {
     return false;
   }
 
-  const provider = buildOAuthProvider(server);
+  const provider = buildOAuthProvider(server, workspaceId);
 
   if (!provider) {
     return false;
@@ -337,7 +350,7 @@ export async function hasValidOAuthTokens(serverId: string): Promise<boolean> {
  * Server-side revocation (removing the integration on the provider's side)
  * stays the user's action where the provider requires it (e.g. Notion).
  */
-export async function disconnectOAuthServer(serverId: string): Promise<boolean> {
+export async function disconnectOAuthServer(workspaceId: string, serverId: string): Promise<boolean> {
   const config = loadMcpServersConfig();
   const server = config.servers.find((s) => s.id === serverId);
 
@@ -345,7 +358,7 @@ export async function disconnectOAuthServer(serverId: string): Promise<boolean> 
     return false;
   }
 
-  const provider = buildOAuthProvider(server);
+  const provider = buildOAuthProvider(server, workspaceId);
 
   if (!provider) {
     return false;
@@ -363,14 +376,75 @@ export async function disconnectOAuthServer(serverId: string): Promise<boolean> 
   }
 }
 
-export async function getMcpToolsForAgent(agentId: string): Promise<Record<string, unknown>> {
+/** Flatten a server row's env + decrypted secrets into interpolation overrides. */
+function serverOverrides(
+  settings: { env?: Record<string, string>; secrets?: Record<string, unknown> } | undefined,
+): Record<string, string> {
+  const out: Record<string, string> = { ...(settings?.env ?? {}) };
+  for (const [key, value] of Object.entries(settings?.secrets ?? {})) {
+    out[key] = typeof value === 'string' ? value : JSON.stringify(value);
+  }
+  return out;
+}
+
+/**
+ * Overlay a workspace row onto a config-file server so per-workspace edits are
+ * actually honored at load time: a workspace that reconfigures the SSH server
+ * for another machine replaces `command`/`args` and adds its `env` without
+ * changing mcp.servers.json or the other workspaces (REQ-003b).
+ */
+function withRowOverrides(
+  config: McpServerConfig,
+  row: { command?: string | null; args?: string[] | null; env?: Record<string, string>; url?: string | null } | undefined,
+): McpServerConfig {
+  if (!row) return config;
+  const merged: McpServerConfig = { ...config };
+
+  if (row.command) merged.command = row.command;
+  if (row.args && row.args.length > 0) merged.args = row.args;
+  if (row.url) merged.url = row.url;
+  if (row.env && Object.keys(row.env).length > 0) {
+    merged.env = { ...(config.env ?? {}), ...row.env };
+  }
+
+  return merged;
+}
+
+export async function getMcpToolsForAgent(
+  workspaceId: string,
+  agentId: string,
+  scopeOverrides?: Record<string, string>,
+): Promise<Record<string, unknown>> {
   const config = loadMcpServersConfig();
+  const enabledIds = new Set(await getEnabledServerIds(workspaceId));
+  const settings = await getWorkspaceServerSettings(workspaceId);
 
   const servers = getMcpServersForAgent(config, agentId);
   const tools: Record<string, unknown> = {};
 
   for (const server of servers) {
-    Object.assign(tools, await loadServerTools(server, config.global ?? {}));
+    if (!enabledIds.has(server.id)) continue;
+    Object.assign(
+      tools,
+      await loadServerTools(
+        withRowOverrides(server, settings[server.id]),
+        config.global ?? {},
+        workspaceId,
+        { ...serverOverrides(settings[server.id]), ...scopeOverrides },
+      ),
+    );
+  }
+
+  for (const custom of await listCustomServers(workspaceId, [agentId])) {
+    Object.assign(
+      tools,
+      await loadServerTools(
+        toConfig(custom),
+        config.global ?? {},
+        workspaceId,
+        { ...serverOverrides(settings[custom.id]), ...scopeOverrides },
+      ),
+    );
   }
 
   return tools;
@@ -379,22 +453,69 @@ export async function getMcpToolsForAgent(agentId: string): Promise<Record<strin
 /**
  * Load the union of MCP tools for several agent ids (used by the workspace
  * runtime so the companion only exposes MCP servers whose agent is enabled for
- * that workspace). Servers are de-duplicated by id.
+ * that workspace). Servers are de-duplicated by id. The per-workspace enabled
+ * state from the MCP settings store is the effective gate (enabling a server
+ * in one workspace never leaks into another).
+ *
+ * `scopeOverrides` lets a project-scoped caller re-root workspace-level servers
+ * (e.g. the `filesystem` server's `{{COMPANION_WORKSPACE_ROOTS}}`) to the
+ * project path so a project session cannot escape it. Scope overrides win over
+ * the workspace server settings.
  */
-export async function getMcpToolsForAgents(agentIds: string[]): Promise<Record<string, unknown>> {
+export async function getMcpToolsForAgents(
+  workspaceId: string,
+  agentIds: string[],
+  scopeOverrides?: Record<string, string>,
+): Promise<Record<string, unknown>> {
   const config = loadMcpServersConfig();
   const wanted = new Set(agentIds);
+  const enabledIds = new Set(await getEnabledServerIds(workspaceId));
+  const settings = await getWorkspaceServerSettings(workspaceId);
 
   const servers = config.servers.filter(
-    (server) => server.agents?.some((agentId) => wanted.has(agentId)) && isMcpServerEnabled(server),
+    (server) => server.agents?.some((agentId) => wanted.has(agentId)) && enabledIds.has(server.id),
   );
 
   const tools: Record<string, unknown> = {};
   for (const server of servers) {
-    Object.assign(tools, await loadServerTools(server, config.global ?? {}));
+    Object.assign(
+      tools,
+      await loadServerTools(
+        withRowOverrides(server, settings[server.id]),
+        config.global ?? {},
+        workspaceId,
+        { ...serverOverrides(settings[server.id]), ...scopeOverrides },
+      ),
+    );
+  }
+
+  for (const custom of await listCustomServers(workspaceId, agentIds)) {
+    Object.assign(
+      tools,
+      await loadServerTools(
+        toConfig(custom),
+        config.global ?? {},
+        workspaceId,
+        { ...serverOverrides(settings[custom.id]), ...scopeOverrides },
+      ),
+    );
   }
 
   return tools;
+}
+
+/** Map a workspace-scoped server row to a config loadable by the registry. */
+function toConfig(server: WorkspaceMcpServer): McpServerConfig {
+  return {
+    id: server.id,
+    agents: server.agents,
+    type: server.type,
+    command: server.command ?? undefined,
+    args: server.args,
+    url: server.url ?? undefined,
+    headers: server.headers,
+    env: server.env,
+  };
 }
 
 /**
@@ -405,7 +526,7 @@ export async function getMcpToolsForAgents(agentIds: string[]): Promise<Record<s
  *
  * Used for one-time setup of OAuth-protected servers such as Notion.
  */
-export async function connectOAuthServer(serverId: string): Promise<Record<string, unknown>> {
+export async function connectOAuthServer(workspaceId: string, serverId: string): Promise<Record<string, unknown>> {
   const config = loadMcpServersConfig();
   const server = config.servers.find((s) => s.id === serverId);
 
@@ -413,12 +534,12 @@ export async function connectOAuthServer(serverId: string): Promise<Record<strin
     throw new Error(`[Compagnon] MCP "${serverId}": no such server in mcp.servers.json.`);
   }
 
-  const provider = buildOAuthProvider(server);
+  const provider = buildOAuthProvider(server, workspaceId);
   if (!provider) {
     throw new Error(`[Compagnon] MCP "${serverId}": server is not configured for OAuth.`);
   }
 
-  const definition = buildServerDefinition(server);
+  const definition = buildServerDefinition(server, undefined, workspaceId);
   if (!definition) {
     throw new Error(`[Compagnon] MCP "${serverId}": could not build server definition.`);
   }

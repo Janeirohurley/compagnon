@@ -42,7 +42,7 @@ async function buildRuntime(workspaceId: string): Promise<WorkspaceRuntime> {
       updatedAt: new Date().toISOString(),
     };
 
-  const subAgents = buildSubAgents(cfg);
+  const subAgents = buildSubAgents(cfg, workspace.id);
   const companion = createCompanionAgent(cfg, workspace.id, subAgents);
 
   return {

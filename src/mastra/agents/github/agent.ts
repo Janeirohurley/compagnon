@@ -67,7 +67,7 @@ const listMyReposTool = createTool({
   },
 });
 
-export function createGithubAgent(cfg?: WorkspaceConfig): Agent {
+export function createGithubAgent(cfg?: WorkspaceConfig, workspaceId: string = 'default'): Agent {
   const companionModel = resolveChatModel(resolveWorkspaceModel(cfg?.model));
 
   return new Agent({
@@ -83,7 +83,7 @@ export function createGithubAgent(cfg?: WorkspaceConfig): Agent {
       },
     }),
     tools: async () => ({
-      ...(await getMcpToolsForAgent("github")),
+      ...(await getMcpToolsForAgent(workspaceId, "github")),
       github_get_my_profile: getMyProfileTool,
       github_list_my_repos: listMyReposTool,
     }) as Record<string, any>,

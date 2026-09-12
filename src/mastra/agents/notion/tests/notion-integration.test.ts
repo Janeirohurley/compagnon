@@ -34,6 +34,8 @@ vi.mock('../../../mcp', () => ({
 
 let notionConnectTool: any;
 let notionDisconnectTool: any;
+let notionConnectToolFactory: ((workspaceId: string) => any) | undefined;
+let notionDisconnectToolFactory: ((workspaceId: string) => any) | undefined;
 let getNotionConfig: (() => ReturnType<typeof import('../config')['getNotionConfig']>) | undefined;
 let requireNotionConfig: (() => void) | undefined;
 let notionInstructions: string;
@@ -44,10 +46,14 @@ let existsSync: Mock;
 let companionAgent: any;
 let getWorkspaceRuntime: (id: string) => Promise<{ companion: any; agents: Record<string, any> }>;
 
+const WS_ID = 'default';
+
 describe('Notion Agent integration with Compagnon', () => {
   beforeAll(async () => {
-    ({ notionConnectTool } = await import('../tools/connect'));
-    ({ notionDisconnectTool } = await import('../tools/disconnect'));
+    ({ createNotionConnectTool: notionConnectToolFactory } = await import('../tools/connect'));
+    ({ createNotionDisconnectTool: notionDisconnectToolFactory } = await import('../tools/disconnect'));
+    notionConnectTool = notionConnectToolFactory!(WS_ID);
+    notionDisconnectTool = notionDisconnectToolFactory!(WS_ID);
     const config = await import('../config');
     getNotionConfig = config.getNotionConfig;
     requireNotionConfig = config.requireNotionConfig;
@@ -89,7 +95,7 @@ describe('Notion Agent integration with Compagnon', () => {
   it('connects via the Notion MCP layer (not a custom Notion API)', async () => {
     connectOAuthServer.mockResolvedValue({ a: 1, b: 2 });
     const out = await notionConnectTool.execute({});
-    expect(connectOAuthServer).toHaveBeenCalledWith('notion');
+    expect(connectOAuthServer).toHaveBeenCalledWith('default', 'notion');
     expect(out.connected).toBe(true);
     expect(out.toolCount).toBe(2);
   });
@@ -112,7 +118,7 @@ describe('Notion Agent integration with Compagnon', () => {
   it('revokes OAuth tokens via the MCP layer when disconnecting', async () => {
     hasValidOAuthTokens.mockResolvedValue(true);
     const out = await notionDisconnectTool.execute({});
-    expect(disconnectOAuthServer).toHaveBeenCalledWith('notion');
+    expect(disconnectOAuthServer).toHaveBeenCalledWith('default', 'notion');
     expect(out.disconnected).toBe(true);
     expect(out.message).toContain('disconnected');
   });

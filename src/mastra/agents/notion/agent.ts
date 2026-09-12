@@ -6,10 +6,12 @@ import { resolveWorkspaceModel } from "../../config/model-config";
 import { resolveChatModel } from "../../providers/resolve";
 import { notionInstructions } from "./notion-instructions";
 import { getNotionMcpTools } from "./mcp-tools";
-import { notionConnectTool, notionDisconnectTool } from "./tools";
+import { createNotionConnectTool, createNotionDisconnectTool } from "./tools";
 
-export function createNotionAgent(cfg?: WorkspaceConfig): Agent {
+export function createNotionAgent(cfg?: WorkspaceConfig, workspaceId: string = 'default'): Agent {
   const companionModel = resolveChatModel(resolveWorkspaceModel(cfg?.model));
+  const notionConnectTool = createNotionConnectTool(workspaceId);
+  const notionDisconnectTool = createNotionDisconnectTool(workspaceId);
 
   return new Agent({
     id: "notion",
@@ -30,7 +32,7 @@ export function createNotionAgent(cfg?: WorkspaceConfig): Agent {
     tools: async () => ({
       notion_connect: notionConnectTool,
       notion_disconnect: notionDisconnectTool,
-      ...(await getNotionMcpTools()),
+      ...(await getNotionMcpTools(workspaceId)),
     }) as Record<string, any>,
   });
 }
@@ -39,4 +41,4 @@ export function createNotionAgent(cfg?: WorkspaceConfig): Agent {
 // authorized, so the first Notion request does not pay the connection cost.
 // Best-effort: when there are no valid tokens it returns an empty set and
 // connects nothing, so this never fails or blocks the boot.
-void getNotionMcpTools().catch(() => undefined);
+void getNotionMcpTools('default').catch(() => undefined);

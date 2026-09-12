@@ -1,10 +1,10 @@
 import { getMcpToolsForAgent, hasValidOAuthTokens } from "../../mcp";
 
-let cache: Record<string, unknown> | null = null;
-let loading: Promise<Record<string, unknown>> | null = null;
+const caches = new Map<string, Record<string, unknown> | null>();
+const loadings = new Map<string, Promise<Record<string, unknown>> | null>();
 
 /**
- * Dynamic Notion MCP tool accessor.
+ * Dynamic Notion MCP tool accessor, keyed per workspace.
  *
  * The Notion agent must expose the remote MCP tools the moment the workspace is
  * authorized, without requiring a server restart. Module-level evaluation of
@@ -13,26 +13,30 @@ let loading: Promise<Record<string, unknown>> | null = null;
  *
  * To solve this the agent configures its `tool` set as a DynamicArgument
  * function that re-resolves on every run through this accessor. The accessor
- * memoizes the loaded tool map and returns an empty map while the workspace is
- * not authorized, so the agent degrades to the notion_connect-only behavior.
+ * memoizes the loaded tool map per workspace and returns an empty map while
+ * that workspace is not authorized, so the agent degrades to the
+ * notion_connect-only behavior.
  */
-export async function getNotionMcpTools(): Promise<Record<string, unknown>> {
-  if (cache) return cache;
+export async function getNotionMcpTools(workspaceId: string = 'default'): Promise<Record<string, unknown>> {
+  if (caches.has(workspaceId) && caches.get(workspaceId)) return caches.get(workspaceId)!;
+  const loading = loadings.get(workspaceId);
   if (loading) return loading;
 
-  loading = (async (): Promise<Record<string, unknown>> => {
+  const pending = (async (): Promise<Record<string, unknown>> => {
     try {
-      const connected = await hasValidOAuthTokens("notion");
+      const connected = await hasValidOAuthTokens(workspaceId, "notion");
       if (!connected) return {};
 
-      cache = (await getMcpToolsForAgent("notion")) ?? {};
-      return cache;
+      const tools = (await getMcpToolsForAgent(workspaceId, "notion")) ?? {};
+      caches.set(workspaceId, tools);
+      return tools;
     } finally {
-      loading = null;
+      loadings.set(workspaceId, null);
     }
   })();
 
-  return loading;
+  loadings.set(workspaceId, pending);
+  return pending;
 }
 
 /**
@@ -40,16 +44,16 @@ export async function getNotionMcpTools(): Promise<Record<string, unknown>> {
  * notion_connect tool right after a successful authorization so the tools are
  * available to the agent on the very next resolution (no reconnection).
  */
-export function seedNotionMcpTools(tools: Record<string, unknown>): void {
-  cache = tools;
-  loading = null;
+export function seedNotionMcpTools(workspaceId: string, tools: Record<string, unknown>): void {
+  caches.set(workspaceId, tools);
+  loadings.set(workspaceId, null);
 }
 
 /**
  * Drop the memoized tool map. Used after disconnecting so Notion tools stop
  * being offered to the agent on subsequent resolutions.
  */
-export function resetNotionMcpTools(): void {
-  cache = null;
-  loading = null;
+export function resetNotionMcpTools(workspaceId: string): void {
+  caches.set(workspaceId, null);
+  loadings.set(workspaceId, null);
 }

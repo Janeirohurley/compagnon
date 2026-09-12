@@ -8,7 +8,7 @@ import { resolveChatModel } from "../../providers/resolve";
 import { researchInstructions } from "./research-instructions";
 import { getMcpToolsForAgent } from "../../mcp";
 
-export function createResearchAgent(cfg?: WorkspaceConfig): Agent {
+export function createResearchAgent(cfg?: WorkspaceConfig, workspaceId: string = 'default'): Agent {
   const companionModel = resolveChatModel(resolveWorkspaceModel(cfg?.model));
 
   return new Agent({
@@ -27,7 +27,7 @@ export function createResearchAgent(cfg?: WorkspaceConfig): Agent {
       // Declarative MCP tools for the research agent (web-search, github),
       // loaded lazily on each run so the workspace runtime can build the agent
       // without connecting any MCP server at construction time.
-      ...(await getMcpToolsForAgent("research")),
+      ...(await getMcpToolsForAgent(workspaceId, "research")),
       web_fetch: webFetchTool,
     }) as Record<string, any>,
   });

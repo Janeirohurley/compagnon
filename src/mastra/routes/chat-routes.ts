@@ -1,5 +1,6 @@
 import { handleChatStream } from "@mastra/ai-sdk";
 import type { Mastra } from "@mastra/core/mastra";
+import type { Agent } from "@mastra/core/agent";
 import {
   RequestContext,
   MASTRA_RESOURCE_ID_KEY,
@@ -9,6 +10,10 @@ import type { MastraDBMessage } from "@mastra/core/agent";
 import { resolveMemoryIds } from "../agents/companion/memory-context";
 import { companionStorage, getCompanionMemory } from "../agents/companion/memory";
 import { resolveWorkspaceFromRequest } from "../workspaces/resolve";
+import { getWorkspaceRuntime } from "../workspaces/runtime";
+import { resolveProjectFromRequest } from "../projects/resolve";
+import { getProjectCompanion } from "../projects/runtime";
+import { appendRunEvents, deleteRunEventsForThread, listRunEvents, toRunEventInput } from "../activity/run-events-store";
 
 const MASTRA_MEMORY_KEY = "MastraMemory";
 
@@ -23,12 +28,60 @@ function json(data: unknown, status = 200) {
   return Response.json(data, { status });
 }
 
+/**
+ * Pick the companion bound to the request scope. Global sessions (no project
+ * id) run the workspace's own companion, rooted on the workspace folder so it
+ * may touch any project of the workspace; project sessions run a companion
+ * confined to the project's root. Throws when the project does not exist or
+ * belongs to another workspace.
+ */
+async function resolveCompanion(
+  c: any,
+  body: Record<string, unknown>,
+): Promise<{ agent: Agent; workspaceId: string; projectId: string | null }> {
+  const workspaceId = resolveWorkspaceFromRequest(c, body);
+  const projectId = resolveProjectFromRequest(c, body);
+
+  if (projectId) {
+    return { agent: await getProjectCompanion(workspaceId, projectId), workspaceId, projectId };
+  }
+  return { agent: (await getWorkspaceRuntime(workspaceId)).companion, workspaceId, projectId: null };
+}
+
+/**
+ * Stream the scoped companion with the stock chat machinery. The companion for
+ * a (workspace, project) scope is built lazily and never registered on the
+ * Mastra instance, so hand `handleChatStream` the exact agent we resolved:
+ * `getAgentById` is the only instance surface its v5 path uses.
+ */
+function scopedChatStream(agent: Agent, params: Record<string, unknown>): Promise<AsyncIterable<unknown>> {
+  return handleChatStream({
+    mastra: { getAgentById: () => agent } as unknown as Mastra,
+    agentId: "companion",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    params: params as any,
+    sendStart: true,
+    sendFinish: true,
+    sendReasoning: false,
+    sendSources: false,
+  });
+}
+
 /** Serialize a stored thread into the shape the UI consumes. */
-function threadToJson(thread: { id: string; title?: string; resourceId?: string | null; createdAt?: Date | null; updatedAt?: Date | null }) {
+function threadToJson(thread: {
+  id: string;
+  title?: string;
+  resourceId?: string | null;
+  metadata?: Record<string, unknown>;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+}) {
+  const projectId = typeof thread.metadata?.projectId === "string" ? thread.metadata.projectId : null;
   return {
     id: thread.id,
     title: thread.title ?? "",
     resourceId: thread.resourceId ?? null,
+    projectId,
     createdAt: thread.createdAt ? thread.createdAt.toISOString() : null,
     updatedAt: thread.updatedAt ? thread.updatedAt.toISOString() : null,
   };
@@ -57,22 +110,59 @@ function extractMessageText(message: MastraDBMessage): string {
 }
 
 /**
+ * Collects the raw movement chunks of one streamed turn and persists them in
+ * bounded batches (flushed every 32 events, then once at stream end) so the
+ * Activity panel can replay the turn without blocking the SSE loop.
+ */
+function runEventCollector(meta: {
+  threadId: string;
+  resourceId?: string | null;
+  workspaceId?: string | null;
+  projectId?: string | null;
+}) {
+  const buffer: unknown[] = [];
+  const flushNow = () => {
+    if (buffer.length === 0) return;
+    const events = buffer
+      .splice(0, buffer.length)
+      .map((chunk) => toRunEventInput(chunk, meta))
+      .filter((e): e is NonNullable<typeof e> => e !== null);
+    if (events.length > 0) void appendRunEvents(events);
+  };
+  return {
+    onChunk: (chunk: unknown) => {
+      if (!chunk || typeof chunk !== "object") return;
+      const type = (chunk as { type?: unknown }).type;
+      if (typeof type !== "string" || type === "data-om-status") return;
+      buffer.push(chunk);
+      if (buffer.length >= 32) flushNow();
+    },
+    onEnd: flushNow,
+  };
+}
+
+/**
  * Wraps the AI SDK v5 chat stream in the same `data: {json}\n\n` SSE framing the
  * stock `chatRoute` emits (terminated by `data: [DONE]`).
  */
-function sseResponse(stream: AsyncIterable<unknown>): Response {
+function sseResponse(
+  stream: AsyncIterable<unknown>,
+  hooks?: { onChunk?: (chunk: unknown) => void; onEnd?: () => void },
+): Response {
   const encoder = new TextEncoder();
   return new Response(
     new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of stream) {
+            hooks?.onChunk?.(chunk);
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
           }
         } catch (error) {
           const text = error instanceof Error ? error.message : String(error);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", errorText: text })}\n\n`));
         }
+        hooks?.onEnd?.();
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
       },
@@ -94,27 +184,40 @@ function sseResponse(stream: AsyncIterable<unknown>): Response {
  *
  * The stock `chatRoute` has no clean way for a client to supply a threadId,
  * but the companion's observational memory (scope: "thread") requires one and
- * refuses otherwise. This route accepts `{ messages, threadId?, resourceId? }`,
- * builds the memory RequestContext explicitly, and reuses the framework's own
- * `handleChatStream` so the SSE wire format stays identical to chatRoute's.
- * threadId/resourceId follow the same resolution rules as every other route
- * (see `resolveMemoryIds`: resourceId ?? userId ?? "anonymous"; thread falls
- * back to the resource id).
+ * refuses otherwise. This route accepts `{ messages, threadId?, resourceId?,
+ * projectId? }`, builds the memory RequestContext explicitly, and reuses the
+ * framework's own `handleChatStream` so the SSE wire format stays identical
+ * to chatRoute's. The agent follows the request scope (`resolveCompanion`):
+ * no projectId -> the workspace's companion (workspace-wide files), projectId
+ * -> a companion confined to the project's root. threadId/resourceId follow
+ * the same resolution rules as every other route (see `resolveMemoryIds`:
+ * resourceId ?? userId ?? "anonymous"; thread falls back to the resource id).
  */
 export const chatRoutes = [
   {
     path: "/chat",
     method: "POST" as const,
     handler: async (c: any) => {
-      const mastra: Mastra = c.get("mastra");
       const body = await c.req.json();
       const messages = body?.messages;
       if (!Array.isArray(messages)) {
         return json({ error: "Messages must be an array of { role, content } messages" }, 400);
       }
 
+      let agent: Agent;
+      let workspaceId = "";
+      let projectId: string | null = null;
+      try {
+        ({ agent, workspaceId, projectId } = await resolveCompanion(c, body));
+      } catch (error) {
+        return json(
+          { error: error instanceof Error ? error.message : "Project scope not found." },
+          404,
+        );
+      }
+
       const ids = resolveMemoryIds({
-        workspaceId: resolveWorkspaceFromRequest(c, body),
+        workspaceId,
         resourceId: body.resourceId,
         userId: body.userId,
         threadId: body.threadId,
@@ -132,24 +235,16 @@ export const chatRoutes = [
       requestContext.set(MASTRA_RESOURCE_ID_KEY, resourceId);
       requestContext.set(MASTRA_MEMORY_KEY, { thread: { id: threadId }, resourceId });
 
-      const stream = await handleChatStream({
-        mastra,
-        agentId: "companion",
-        params: { messages, requestContext },
-        sendStart: true,
-        sendFinish: true,
-        sendReasoning: false,
-        sendSources: false,
-      });
+      const stream = await scopedChatStream(agent, { messages, requestContext });
+      const collector = runEventCollector({ threadId, resourceId, workspaceId, projectId });
 
-      return sseResponse(stream);
+      return sseResponse(stream, collector);
     },
   },
   {
     path: "/chat/approvals",
     method: "POST" as const,
     handler: async (c: any) => {
-      const mastra: Mastra = c.get("mastra");
       const body = await c.req.json();
       const { runId, toolCallId } = body;
       if (typeof runId !== "string" || !runId || typeof toolCallId !== "string" || !toolCallId) {
@@ -158,8 +253,20 @@ export const chatRoutes = [
       const approved = body.approved === true;
       const reason = typeof body.reason === "string" && body.reason.length > 0 ? body.reason : undefined;
 
+      let agent: Agent;
+      let workspaceId = "";
+      let projectId: string | null = null;
+      try {
+        ({ agent, workspaceId, projectId } = await resolveCompanion(c, body));
+      } catch (error) {
+        return json(
+          { error: error instanceof Error ? error.message : "Project scope not found." },
+          404,
+        );
+      }
+
       const ids = resolveMemoryIds({
-        workspaceId: resolveWorkspaceFromRequest(c, body),
+        workspaceId,
         resourceId: body.resourceId,
         threadId: body.threadId,
       });
@@ -174,21 +281,14 @@ export const chatRoutes = [
       // declineToolCall pass to the agent, and the continuation is streamed back
       // with the same SSE framing as /chat. (v5 does not forward toolCallId,
       // so the most recent suspended tool call of the run is resumed.)
-      const stream = await handleChatStream({
-        mastra,
-        agentId: "companion",
-        params: {
-          messages: [],
-          resumeData: approved ? { approved: true } : { approved: false, ...(reason ? { reason } : {}) },
-          runId,
-          requestContext,
-        },
-        sendStart: true,
-        sendFinish: true,
-        sendReasoning: false,
-        sendSources: false,
+      const stream = await scopedChatStream(agent, {
+        messages: [],
+        resumeData: approved ? { approved: true } : { approved: false, ...(reason ? { reason } : {}) },
+        runId,
+        requestContext,
       });
-      return sseResponse(stream);
+      const collector = runEventCollector({ threadId, resourceId, workspaceId, projectId });
+      return sseResponse(stream, collector);
     },
   },
   {
@@ -215,13 +315,16 @@ export const chatRoutes = [
         resourceId: body.resourceId,
       });
       const id = typeof body.id === "string" && body.id.trim() ? body.id : globalThis.crypto.randomUUID();
+      // A conversation belongs either to its project (local session) or to the
+      // workspace at large (global session). Persisted on the thread metadata.
+      const projectId = typeof body.projectId === "string" && body.projectId.trim() ? body.projectId : null;
       const store = await memoryStore();
       const now = new Date();
       const thread = {
         id,
         resourceId,
         title: typeof body.title === "string" ? body.title : "",
-        metadata: {} as Record<string, unknown>,
+        metadata: projectId ? { projectId } : ({} as Record<string, unknown>),
         createdAt: now,
         updatedAt: now,
       };
@@ -248,7 +351,17 @@ export const chatRoutes = [
       // Memory-level delete also clears the observational memory record and
       // the thread's vector embeddings (the store only removes messages+thread).
       await getCompanionMemory().deleteThread(threadId);
+      void deleteRunEventsForThread(threadId);
       return new Response(null, { status: 204 });
+    },
+  },
+  {
+    path: "/conversations/:threadId/activity",
+    method: "GET" as const,
+    handler: async (c: any) => {
+      const { threadId } = c.req.param();
+      const events = await listRunEvents(threadId);
+      return json({ events });
     },
   },
   {

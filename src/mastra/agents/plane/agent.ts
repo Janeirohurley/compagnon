@@ -7,7 +7,7 @@ import { resolveChatModel } from "../../providers/resolve";
 import { getMcpToolsForAgent } from "../../mcp";
 import { planeInstructions } from "./plane-instructions";
 
-export function createPlaneAgent(cfg?: WorkspaceConfig): Agent {
+export function createPlaneAgent(cfg?: WorkspaceConfig, workspaceId: string = 'default'): Agent {
   const companionModel = resolveChatModel(resolveWorkspaceModel(cfg?.model));
 
   return new Agent({
@@ -25,7 +25,7 @@ export function createPlaneAgent(cfg?: WorkspaceConfig): Agent {
     // MCP host tools are loaded lazily on each run (no top-level await): the
     // runtime only builds agents whose workspace has them enabled.
     tools: async () => ({
-      ...(await getMcpToolsForAgent("plane")),
+      ...(await getMcpToolsForAgent(workspaceId, "plane")),
     }) as Record<string, any>,
   });
 }

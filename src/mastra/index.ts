@@ -30,7 +30,9 @@ import { agentMemoryWorkflow } from "./workflows/agent-memory-workflow";
 import { planExecutorWorkflow } from "./workflows/plan-executor-workflow";
 import { memoryMaintenanceWorkflow } from "./workflows/memory-maintenance-workflow";
 import { memoryMaintenanceTool } from "./tools/memory-maintenance-tool";
+import { toolsRoutes } from "./routes/tools-routes";
 import { workspaceRoutes } from "./routes/workspace-routes";
+import { projectRoutes } from "./routes/project-routes";
 import { providerRoutes } from "./routes/provider-routes";
 import { registerMemoryMaintenanceSchedules } from "./workspaces/schedules";
 import { refreshProviderCache } from "./providers/resolve";
@@ -87,9 +89,28 @@ export const mastra = new Mastra({
     },
   }),
   server: {
+    // The UI lives on a different origin (Vite) and scopes every request with
+    // the x-workspace-id header; the framework default allow-list does not
+    // include it, so all multi-workspace calls from the browser fail their
+    // preflight. Keep the defaults and add our tenancy header.
+    cors: {
+      origin: "*",
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowHeaders: [
+        "Content-Type",
+        "Authorization",
+        "A2A-Version",
+        "x-mastra-client-type",
+        "x-mastra-dev-playground",
+        "x-workspace-id",
+      ],
+      exposeHeaders: ["Content-Length", "X-Requested-With"],
+      credentials: false,
+    },
     apiRoutes: [
       ...chatRoutes,
       ...workspaceRoutes,
+      ...projectRoutes,
       ...providerRoutes,
       chatRoute({
         path: "/chat/plane",
@@ -100,6 +121,7 @@ export const mastra = new Mastra({
         agent: "notion",
       }),
       ...connectionsRoutes,
+      ...toolsRoutes,
       ...memoryRoutes,
       ...plannerRoutes,
       ...githubRoutes,

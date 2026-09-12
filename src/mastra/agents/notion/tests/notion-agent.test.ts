@@ -13,7 +13,7 @@ describe('Notion Agent', () => {
     const mod = await import('../index');
     notionAgent = mod.createNotionAgent();
     notionInstructions = mod.notionInstructions;
-    notionConnectTool = mod.notionConnectTool;
+    notionConnectTool = mod.createNotionConnectTool('default');
   });
 
   it('is constructed with the notion id and name', () => {

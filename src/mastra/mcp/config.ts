@@ -44,14 +44,17 @@ const PLACEHOLDER_REGEX = /\{\{([A-Z0-9_]+)(?::([^}]*))?\}\}/g;
 
 const MISSING_VAR_PATTERN = /\{\{[A-Z0-9_]+(?::[^}]*)?\}\}/g;
 
-export function resolveEnv(name: string, fallback?: string): string {
+export function resolveEnv(name: string, fallback?: string, overrides?: Record<string, string>): string {
+  if (overrides && Object.prototype.hasOwnProperty.call(overrides, name)) {
+    return overrides[name] ?? '';
+  }
   return process.env[name] ?? fallback ?? '';
 }
 
-export function interpolate(value: string): string {
+export function interpolate(value: string, overrides?: Record<string, string>): string {
   return value.replace(
     PLACEHOLDER_REGEX,
-    (_match: string, name: string, fallback?: string) => resolveEnv(name, fallback),
+    (_match: string, name: string, fallback?: string) => resolveEnv(name, fallback, overrides),
   );
 }
 
@@ -59,14 +62,14 @@ export function envHasPlaceholders(value: string): boolean {
   return MISSING_VAR_PATTERN.test(value);
 }
 
-export function expandArgs(args: string[]): string[] {
+export function expandArgs(args: string[], overrides?: Record<string, string>): string[] {
   const expanded: string[] = [];
 
   for (const raw of args) {
     const standalone = raw.match(/^\{\{([A-Z0-9_]+)(?::([^}]*))?\}\}$/);
 
     if (standalone) {
-      const value = resolveEnv(standalone[1], standalone[2]);
+      const value = resolveEnv(standalone[1], standalone[2], overrides);
 
       if (value === '') {
         continue;
@@ -89,7 +92,7 @@ export function expandArgs(args: string[]): string[] {
       continue;
     }
 
-    const value = interpolate(raw);
+    const value = interpolate(raw, overrides);
 
     if (value !== '') {
       expanded.push(value);
@@ -99,20 +102,28 @@ export function expandArgs(args: string[]): string[] {
   return expanded;
 }
 
-export function buildArgs(config: McpServerConfig): string[] {
-  const args = expandArgs(config.args ?? []);
+export function buildArgs(config: McpServerConfig, overrides?: Record<string, string>): string[] {
+  const args = expandArgs(config.args ?? [], overrides);
 
   for (const optional of config.optionalArgs ?? []) {
-    if (process.env[optional.whenEnv]) {
-      args.push(...expandArgs(optional.args));
+    // The optional-args gate honors per-workspace overrides too: a workspace
+    // that stores `COMPANION_SSH_CONFIG` (env row) triggers `--config=…`
+    // without needing a process-level variable (REQ-003b).
+    const setByOverride =
+      overrides && Object.prototype.hasOwnProperty.call(overrides, optional.whenEnv);
+
+    if (setByOverride || process.env[optional.whenEnv]) {
+      args.push(...expandArgs(optional.args, overrides));
     }
   }
 
   return args;
 }
 
-export function mapEnv(env: Record<string, string>): Record<string, string> {
-  return Object.fromEntries(Object.entries(env).map(([key, value]) => [key, interpolate(value)]));
+export function mapEnv(env: Record<string, string>, overrides?: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(env).map(([key, value]) => [key, interpolate(value, overrides)]),
+  );
 }
 
 export function isMcpServerEnabled(config: McpServerConfig): boolean {

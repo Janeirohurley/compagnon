@@ -25,14 +25,17 @@ import { buildSubAgents } from '../../workspaces/subagents';
 /**
  * Build a companion agent for a workspace. `subAgents` is optional so the
  * runtime can share the exact instances it also exposes; when omitted the
- * sub-agents are built from `cfg.enabledAgents` here.
+ * sub-agents are built from `cfg.enabledAgents` here. `mcpOverrides` lets a
+ * project-scoped caller re-root workspace MCP servers (notably the
+ * `filesystem` server) to the project path so the agent cannot leave it.
  */
 export function createCompanionAgent(
   cfg: WorkspaceConfig,
   _workspaceId: string,
   subAgents?: Record<string, Agent>,
+  mcpOverrides?: Record<string, string>,
 ): Agent {
-  const agents = subAgents ?? buildSubAgents(cfg);
+  const agents = subAgents ?? buildSubAgents(cfg, _workspaceId);
 
   const model = getCompanionModelConfig(cfg.model);
 
@@ -98,7 +101,7 @@ export function createCompanionAgent(
       request_plan: requestPlanTool,
       plan_executor: planExecutorTool,
       research_request: researchRequestTool,
-      ...(await getMcpToolsForAgents(['companion', ...cfg.enabledAgents])),
+      ...(await getMcpToolsForAgents(_workspaceId, ['companion', ...cfg.enabledAgents], mcpOverrides)),
     }),
 
     // Subagents - specialized agents for specific tasks

@@ -1,5 +1,5 @@
-export { notionConnectTool } from './connect';
-export { notionDisconnectTool } from './disconnect';
+export { createNotionConnectTool } from './connect';
+export { createNotionDisconnectTool } from './disconnect';
 
 /**
  * Tools index (stub for the Mastra fs-agents build). The Notion data tools are
