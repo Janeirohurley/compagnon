@@ -15,6 +15,7 @@ export type RunEventKind =
   | "tool-output"
   | "tool-agent"
   | "approval"
+  | "compaction"
   | "text"
   | "finish"
   | "error"
@@ -181,6 +182,8 @@ const KIND_BY_TYPE: Record<string, RunEventKind> = {
   "tool-output-error": "tool-output",
   "tool-call-approval": "approval",
   "data-tool-call-approval": "approval",
+  compaction: "compaction",
+  "compaction_delta": "compaction",
   "data-om-status": "other",
   "text-start": "text",
   "text-delta": "text",
