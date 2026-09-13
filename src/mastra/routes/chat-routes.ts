@@ -62,7 +62,7 @@ function scopedChatStream(agent: Agent, params: Record<string, unknown>): Promis
     params: params as any,
     sendStart: true,
     sendFinish: true,
-    sendReasoning: false,
+    sendReasoning: true,
     sendSources: false,
   });
 }
