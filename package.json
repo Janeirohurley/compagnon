@@ -30,7 +30,7 @@
     "@mastra/memory": "1.26.2",
     "@mastra/observability": "1.17.0",
     "ai": "^7.0.58",
-    "zod": "4.4.3"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@types/node": "latest",
